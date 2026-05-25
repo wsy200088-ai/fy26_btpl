@@ -6,6 +6,7 @@
 <title>FY26 PL 分析儀表板 — Benesse Taiwan</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 /* ── Design System (Pastel Sky / light) ─────────────── */
 /* =====================================================
@@ -544,6 +545,89 @@ html, body {
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 
 /* RESPONSIVE */
+
+/* ── Monthly Tab Controls ─────── */
+.ctrl-group { display:flex; flex-direction:column; gap:6px; }
+.ctrl-label { font-size:11px; font-weight:600; color:var(--color-muted); text-transform:uppercase; letter-spacing:.04em; }
+
+/* Month dropdown */
+.month-dropdown-wrap { position:relative; }
+.month-dd-trigger {
+  display:flex; align-items:center; gap:8px;
+  padding:7px 14px; border-radius:calc(var(--radius)/2);
+  border:1px solid var(--color-border); background:var(--color-card);
+  color:var(--color-text); font-size:13px; font-weight:500; cursor:pointer;
+  font-family:Arial,Helvetica,sans-serif; white-space:nowrap;
+}
+.month-dd-trigger:hover { border-color:var(--color-chart); }
+.dd-arrow { font-size:10px; color:var(--color-muted); }
+.month-dd-panel {
+  position:absolute; top:calc(100% + 4px); left:0; z-index:50;
+  background:var(--color-card); border:1px solid var(--color-border);
+  border-radius:12px; box-shadow:0 8px 24px rgba(12,74,110,.12);
+  padding:12px; min-width:200px;
+}
+.dd-actions { display:flex; gap:8px; margin-bottom:8px; }
+.dd-actions button {
+  flex:1; padding:5px; border-radius:6px; border:1px solid var(--color-border);
+  background:transparent; color:var(--color-muted); font-size:11px; cursor:pointer;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.dd-actions button:hover { background:var(--color-main-100); color:var(--color-chart); }
+.dd-checks { display:flex; flex-direction:column; gap:4px; max-height:260px; overflow-y:auto; }
+.dd-check-item {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 4px; border-radius:6px; cursor:pointer;
+  font-size:13px; color:var(--color-text); user-select:none;
+}
+.dd-check-item:hover { background:var(--color-main-50); }
+.dd-check-item input { accent-color:var(--color-chart); width:14px; height:14px; cursor:pointer; }
+.dd-check-item .has-data { color:var(--color-chart); font-size:10px; font-weight:700; margin-left:2px; }
+
+/* Biz chips */
+.biz-chips-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+.biz-chip {
+  display:flex; align-items:center; gap:5px;
+  padding:5px 12px; border-radius:999px;
+  border:1px solid var(--color-border);
+  background:var(--color-card); font-size:12px; font-weight:500;
+  cursor:pointer; transition:.15s; color:var(--color-muted);
+  font-family:Arial,Helvetica,sans-serif;
+}
+.biz-chip .chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.biz-chip.active { color:#fff; border-color:transparent; }
+.biz-chip.active .chip-dot { background:#fff !important; }
+
+/* Metric pills */
+.metric-pills { display:flex; gap:4px; }
+.metric-pill {
+  padding:6px 12px; border-radius:999px; border:1px solid var(--color-border);
+  background:transparent; color:var(--color-muted); font-size:12px; font-weight:500;
+  cursor:pointer; transition:.15s; font-family:Arial,Helvetica,sans-serif;
+}
+.metric-pill:hover { border-color:var(--color-chart); color:var(--color-chart); }
+.metric-pill.active { background:var(--color-chart); border-color:var(--color-chart); color:#fff; }
+
+/* Monthly PL table */
+.monthly-pl-table td:first-child { 
+  padding-left:0 !important; display:flex; align-items:center; gap:8px; 
+  font-weight:600; color:var(--color-text); min-width:140px;
+}
+.monthly-pl-table .biz-bar { 
+  width:4px; height:32px; border-radius:2px; flex-shrink:0; 
+}
+.monthly-pl-table .ach-badge {
+  display:inline-flex; align-items:center;
+  padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;
+}
+.monthly-pl-table .ach-high { background:rgba(5,150,105,.12); color:#059669; }
+.monthly-pl-table .ach-low  { background:rgba(220,38,38,.10); color:#dc2626; }
+.monthly-pl-table .ach-na   { background:rgba(100,116,139,.08); color:#64748b; }
+.monthly-pl-table tr.total-row td { 
+  background:color-mix(in srgb,var(--color-main) 14%,transparent);
+  font-weight:700; color:var(--color-text);
+}
+
 @media(max-width:960px) {
   .ds-root .grid-5 { grid-template-columns: repeat(3,1fr); }
   .kpi-charts-grid { grid-template-columns: 1fr 1fr; }
@@ -563,6 +647,7 @@ html, body {
     <button class="nav-tab" onclick="showPage('business')">事業別分析</button>
     <button class="nav-tab" onclick="showPage('common')">共通費用</button>
     <button class="nav-tab" onclick="showPage('kpi')">KPI 總覽</button>
+    <button class="nav-tab" onclick="showPage('monthly')">月別分析</button>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button class="hdr-btn secondary" onclick="openImport()">⬆ 匯入 Excel</button>
@@ -681,6 +766,110 @@ html, body {
     </div>
   </div>
 </div></div><!-- /page-kpi -->
+
+
+<!-- ═══ PAGE 5: 月別分析 ═══ -->
+<div id="page-monthly" class="page">
+<div class="dashboard-container">
+
+  <div class="dashboard-header">
+    <h2 class="dashboard-title">月別分析</h2>
+    <p class="dashboard-subtitle">選擇月份與事業別，觀察各月份事業別的收入・利潤達成狀況</p>
+  </div>
+
+  <!-- 控制列 -->
+  <div class="monthly-controls card" style="margin-bottom:16px;padding:14px 20px">
+    <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+
+      <!-- 月份複選 -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">月份選擇</div>
+        <div class="month-dropdown-wrap" id="month-dd-wrap">
+          <button class="month-dd-trigger" id="month-dd-btn" onclick="toggleMonthDD(event)">
+            <span id="month-dd-label">1 個月已選</span>
+            <span class="dd-arrow">▾</span>
+          </button>
+          <div class="month-dd-panel" id="month-dd-panel" style="display:none">
+            <div class="dd-actions">
+              <button onclick="selectAllMonths()">全選</button>
+              <button onclick="clearMonths()">清除</button>
+            </div>
+            <div id="month-dd-checks" class="dd-checks"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 事業別 Chip -->
+      <div class="ctrl-group" style="flex:1">
+        <div class="ctrl-label">事業別</div>
+        <div id="monthly-biz-chips" class="biz-chips-wrap"></div>
+      </div>
+
+      <!-- 指標切換 -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">對比指標</div>
+        <div class="metric-pills">
+          <button class="metric-pill active" onclick="setMonthMetric('收入',this)">收入</button>
+          <button class="metric-pill" onclick="setMonthMetric('營業利潤',this)">營業利潤</button>
+          <button class="metric-pill" onclick="setMonthMetric('成本',this)">成本</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 單月視圖 -->
+  <div id="monthly-single-view">
+
+    <!-- KPI 概要 -->
+    <div class="grid grid-4 section" id="monthly-kpi-row"></div>
+
+    <!-- 圖表區 -->
+    <div class="grid grid-2 section">
+      <div class="card">
+        <div class="chart-wrapper" style="height:320px">
+          <div class="chart-title" id="monthly-bar-title">各事業別 月別收入（千元）</div>
+          <canvas id="chart-monthly-bar" style="max-height:280px"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="chart-wrapper" style="height:320px">
+          <div class="chart-title">事業別收入佔比</div>
+          <canvas id="chart-monthly-donut" style="max-height:280px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 事業別損益表（參考風格） -->
+    <div class="section card">
+      <div class="section-hdr">
+        <h3 id="monthly-tbl-title">事業別損益表</h3>
+        <span class="notice">單位：百萬元（M NTD）</span>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table monthly-pl-table" id="tbl-monthly-pl"></table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 多月趨勢視圖 -->
+  <div id="monthly-multi-view" style="display:none">
+    <div class="section card">
+      <div class="chart-wrapper" style="height:340px">
+        <div class="chart-title" id="monthly-trend-title">事業別月別趨勢（FY26 實績 + 目標）</div>
+        <canvas id="chart-monthly-trend" style="max-height:300px"></canvas>
+      </div>
+    </div>
+    <div class="section card">
+      <div class="section-hdr"><h3>選定期間 事業別累計</h3><span class="notice">單位：百萬元（M NTD）</span></div>
+      <div class="tbl-wrap">
+        <table class="data-table monthly-pl-table" id="tbl-monthly-multi"></table>
+      </div>
+    </div>
+  </div>
+
+</div></div><!-- /page-monthly -->
 
 </div><!-- /ds-root -->
 
@@ -878,6 +1067,7 @@ function monthlyActualSeries(biz, metric) {
 //  NAVIGATION
 // ═══════════════════════════════════════════════════
 function showPage(pg) {
+  if(pg==='monthly'&&!document.getElementById('monthly-biz-chips').innerHTML){buildMonthDD();buildBizChips();}  
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + pg).classList.add('active');
@@ -897,6 +1087,7 @@ function renderPage(pg) {
   else if (pg === 'business') renderBusiness();
   else if (pg === 'common') renderCommon();
   else if (pg === 'kpi') renderKPI();
+  else if (pg === 'monthly') renderMonthly();
 }
 
 // ═══════════════════════════════════════════════════
@@ -1610,6 +1801,446 @@ function exportHTML() {
 // ═══════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+//  MONTHLY TAB
+// ═══════════════════════════════════════════════════
+
+const BIZ_COLORS = {
+  '學習商品':      '#3b82f6',
+  '舞台劇':        '#f43f5e',
+  '授權金':        '#8b5cf6',
+  '周邊商品':      '#f59e0b',
+  '巧連智數位經典': '#10b981',
+  'Mirafeel':     '#ec4899',
+  '其他':          '#6b7280',
+  '日本跨境進口A': '#0891b2',
+};
+
+const MONTH_STATE = {
+  selectedMonths: ['202604'],
+  selectedBiz:    [...BIZ_LIST],
+  metric:         '收入',
+};
+
+const fmtM = n => {
+  if (n == null) return '—';
+  const s = n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  if (a >= 1e6) return s + (a/1e6).toFixed(1) + 'M';
+  if (a >= 1e3) return s + (a/1e3).toFixed(0) + 'K';
+  return s + Math.round(a);
+};
+
+function getMonthLabel(m) {
+  const idx = DATA.months_fy26.indexOf(Number(m));
+  return idx >= 0 ? MONTH_LABELS[idx] : m;
+}
+
+function getMonthHasActual(m) {
+  return Object.values(DATA.fy26_actual).some(biz => biz[m] != null);
+}
+
+// ── 月份下拉 ──────────────────────────────────────
+function buildMonthDD() {
+  const checks = document.getElementById('month-dd-checks');
+  if (!checks) return;
+  checks.innerHTML = DATA.months_fy26.map(m => {
+    const ms = String(m);
+    const hasData = getMonthHasActual(ms);
+    const checked = MONTH_STATE.selectedMonths.includes(ms) ? 'checked' : '';
+    return `<label class="dd-check-item">
+      <input type="checkbox" value="${ms}" ${checked} onchange="onMonthCheck('${ms}',this.checked)">
+      <span>${getMonthLabel(ms)}</span>
+      ${hasData ? '<span class="has-data">● 有實績</span>' : ''}
+    </label>`;
+  }).join('');
+  updateMonthDDLabel();
+}
+
+function onMonthCheck(m, checked) {
+  if (checked) { if (!MONTH_STATE.selectedMonths.includes(m)) MONTH_STATE.selectedMonths.push(m); }
+  else { MONTH_STATE.selectedMonths = MONTH_STATE.selectedMonths.filter(x => x !== m); }
+  if (MONTH_STATE.selectedMonths.length === 0) {
+    MONTH_STATE.selectedMonths = [String(DATA.months_fy26[0])];
+    buildMonthDD();
+  }
+  updateMonthDDLabel();
+  renderMonthly();
+}
+
+function updateMonthDDLabel() {
+  const n = MONTH_STATE.selectedMonths.length;
+  const lbl = n === 1
+    ? getMonthLabel(MONTH_STATE.selectedMonths[0])
+    : `${n} 個月已選`;
+  const el = document.getElementById('month-dd-label');
+  if (el) el.textContent = lbl;
+}
+
+function toggleMonthDD(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('month-dd-panel');
+  if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+}
+
+function selectAllMonths() {
+  MONTH_STATE.selectedMonths = DATA.months_fy26.map(String);
+  buildMonthDD(); renderMonthly();
+}
+function clearMonths() {
+  MONTH_STATE.selectedMonths = [String(DATA.months_fy26[0])];
+  buildMonthDD(); renderMonthly();
+}
+
+// 點外部關閉
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('month-dd-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const panel = document.getElementById('month-dd-panel');
+    if (panel) panel.style.display = 'none';
+  }
+});
+
+// ── 事業別 Chip ────────────────────────────────────
+function buildBizChips() {
+  const el = document.getElementById('monthly-biz-chips');
+  if (!el) return;
+  el.innerHTML = BIZ_LIST.map(biz => {
+    const active = MONTH_STATE.selectedBiz.includes(biz);
+    const color  = BIZ_COLORS[biz] || '#64748b';
+    return `<button class="biz-chip${active?' active':''}"
+      style="${active?`background:${color};border-color:${color}`:''}"
+      onclick="toggleBizChip('${biz}',this,'${color}')">
+      <span class="chip-dot" style="background:${active?'#fff':color}"></span>
+      ${biz}
+    </button>`;
+  }).join('');
+}
+
+function toggleBizChip(biz, el, color) {
+  if (MONTH_STATE.selectedBiz.includes(biz)) {
+    if (MONTH_STATE.selectedBiz.length <= 1) return;
+    MONTH_STATE.selectedBiz = MONTH_STATE.selectedBiz.filter(b => b !== biz);
+    el.classList.remove('active');
+    el.style.background = ''; el.style.borderColor = '';
+    el.querySelector('.chip-dot').style.background = color;
+  } else {
+    MONTH_STATE.selectedBiz.push(biz);
+    el.classList.add('active');
+    el.style.background = color; el.style.borderColor = color;
+    el.querySelector('.chip-dot').style.background = '#fff';
+  }
+  renderMonthly();
+}
+
+// ── 指標切換 ───────────────────────────────────────
+function setMonthMetric(m, btn) {
+  MONTH_STATE.metric = m;
+  document.querySelectorAll('.metric-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMonthly();
+}
+
+// ── 核心渲染 ──────────────────────────────────────
+function renderMonthly() {
+  buildMonthDD();
+  buildBizChips();
+  const isSingle = MONTH_STATE.selectedMonths.length === 1;
+  document.getElementById('monthly-single-view').style.display = isSingle ? '' : 'none';
+  document.getElementById('monthly-multi-view').style.display  = isSingle ? 'none' : '';
+  if (isSingle) renderMonthlySingle(MONTH_STATE.selectedMonths[0]);
+  else          renderMonthlyMulti(MONTH_STATE.selectedMonths);
+}
+
+// ─── 單月視圖 ────────────────────────────────────
+function getBizMonthData(biz, month) {
+  const m25 = String(parseInt(month) - 100);
+  return {
+    init:   ((DATA.budget_init[biz]  || {})[month] || {}),
+    adj:    ((DATA.budget_adj[biz]   || {})[month] || {}),
+    actual: ((DATA.fy26_actual[biz]  || {})[month] || null),
+    fy25:   ((DATA.fy25_actual[biz]  || {})[m25]   || {}),
+  };
+}
+
+function renderMonthlySingle(month) {
+  const metric = MONTH_STATE.metric;
+  const bizList = MONTH_STATE.selectedBiz;
+  const monthLabel = getMonthLabel(month);
+
+  // KPI tiles (合計)
+  let totAdj=0, totActual=null, totFY25=0, totInit=0;
+  const hasActual = getMonthHasActual(month);
+  for (const biz of bizList) {
+    const d = getBizMonthData(biz, month);
+    totInit   += d.init[metric]   || 0;
+    totAdj    += d.adj[metric]    || 0;
+    totFY25   += d.fy25[metric]   || 0;
+    if (d.actual) { totActual = (totActual||0) + (d.actual[metric]||0); }
+  }
+  const achAdj = (hasActual && totAdj) ? totActual/totAdj : null;
+  const yoy    = totFY25 ? ((totActual||totAdj) - totFY25)/Math.abs(totFY25) : null;
+
+  document.getElementById('monthly-kpi-row').innerHTML = [
+    {label:`${monthLabel} 期初目標`,    val:totInit,   color:'var(--color-muted)', sub:`${metric}`},
+    {label:`${monthLabel} 期初調整目標`,val:totAdj,    color:'var(--color-chart)', sub:`${metric}`},
+    {label:`${monthLabel} FY25同期`,    val:totFY25,   color:'#059669',            sub:`FY25同月`},
+    {label:`${monthLabel} FY26實績`,    val:totActual, color:'#d97706',
+     sub: achAdj!=null ? `達成(vs期初調整)：${(achAdj*100).toFixed(1)}%` : '尚無實績'},
+  ].map(c=>`<div class="card kpi-card" style="border-top:3px solid ${c.color}">
+    <div class="kpi-label">${c.label}</div>
+    <div class="kpi-value" style="color:${c.color}">${fmtM(c.val)}<span class="kpi-note">NTD</span></div>
+    <div class="kpi-sub">${c.sub}</div>
+  </div>`).join('');
+
+  // Update titles
+  document.getElementById('monthly-bar-title').textContent = `${monthLabel} 各事業別 ${metric}（FY26期初調整 vs 實績 vs FY25同期）`;
+  document.getElementById('monthly-tbl-title').textContent = `${monthLabel} 事業別損益表`;
+
+  // ── 長條圖 ──────────────────────────────────────
+  destroyChart('monthly-bar');
+  const labels = bizList;
+  const adjData   = bizList.map(b => (getBizMonthData(b,month).adj[metric]  ||0)/1000);
+  const actData   = bizList.map(b => { const a=getBizMonthData(b,month).actual; return a?(a[metric]||0)/1000:null; });
+  const fy25Data  = bizList.map(b => (getBizMonthData(b,month).fy25[metric] ||0)/1000);
+  const bgColors  = bizList.map(b => BIZ_COLORS[b]||'#64748b');
+
+  Chart.register(ChartDataLabels);
+  CHARTS['monthly-bar'] = new Chart(document.getElementById('chart-monthly-bar'), {
+    type:'bar',
+    plugins:[ChartDataLabels],
+    data:{
+      labels,
+      datasets:[
+        { label:'FY26期初調整',
+          data:adjData, backgroundColor:'rgba(100,116,139,.18)',
+          borderColor:'#94a3b8', borderWidth:1.5, borderRadius:4,
+          datalabels:{display:false} },
+        { label:'FY26實績',
+          data:actData, backgroundColor:bgColors.map(c=>c+'cc'),
+          borderColor:bgColors, borderWidth:1, borderRadius:4,
+          datalabels:{
+            display:true, anchor:'end', align:'top',
+            formatter:(v,ctx)=>v!=null?fmtM(v*1000):'',
+            font:{size:10,weight:'700'}, color:ctx=>BIZ_COLORS[bizList[ctx.dataIndex]]||'#333'
+          }
+        },
+        { label:'FY25同期',
+          data:fy25Data, type:'line',
+          borderColor:'#059669', borderWidth:2,
+          borderDash:[5,4], pointRadius:4,
+          pointBackgroundColor:'#059669',
+          fill:false, tension:.2,
+          datalabels:{display:false}
+        },
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtM((ctx.raw||0)*1000)}`}},
+        datalabels:{}
+      },
+      scales:{
+        x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>fmtM(v*1000)},
+           grid:{color:'rgba(12,74,110,.06)'},
+           title:{display:true,text:'千元',color:'var(--color-muted)',font:{size:10}}}
+      }
+    }
+  });
+
+  // ── Donut 圖 ─────────────────────────────────────
+  destroyChart('monthly-donut');
+  const donutSrc = hasActual ? actData : adjData;
+  const donutLabels = [];
+  const donutData   = [];
+  const donutColors = [];
+  bizList.forEach((b,i)=>{
+    const v=donutSrc[i]||0;
+    if(v>0){ donutLabels.push(b); donutData.push(v); donutColors.push(BIZ_COLORS[b]||'#64748b'); }
+  });
+  const totalRev = donutData.reduce((a,b)=>a+b,0);
+
+  CHARTS['monthly-donut'] = new Chart(document.getElementById('chart-monthly-donut'), {
+    type:'doughnut',
+    plugins:[ChartDataLabels],
+    data:{
+      labels:donutLabels,
+      datasets:[{
+        data:donutData, backgroundColor:donutColors,
+        borderWidth:2, borderColor:'#fff', hoverOffset:6,
+        datalabels:{
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]/totalRev>0.04,
+          formatter:(v,ctx)=>{
+            const pct=((v/totalRev)*100).toFixed(0);
+            return pct+'%';
+          },
+          color:'#fff', font:{size:10,weight:'700'}
+        }
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{
+        legend:{position:'right',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtM(ctx.raw*1000)} (${((ctx.raw/totalRev)*100).toFixed(1)}%)`}},
+        datalabels:{}
+      }
+    }
+  });
+
+  // ── 事業別損益表（參考風格） ──────────────────────
+  let html = `<thead><tr>
+    <th style="text-align:left;min-width:150px">事業別</th>
+    <th>期初調整</th><th>FY26實績</th><th>達成率</th>
+    <th>FY25同期</th><th>YoY</th>
+    <th>期初調整 利潤</th><th>FY26實績 利潤</th><th>利潤率</th>
+  </tr></thead><tbody>`;
+
+  let totRow = {adj:{收入:0,營業利潤:0}, act:{收入:0,營業利潤:0}, fy25:{收入:0,營業利潤:0}, init:{收入:0,營業利潤:0}};
+  for (const biz of bizList) {
+    const d = getBizMonthData(biz, month);
+    const color = BIZ_COLORS[biz]||'#64748b';
+    const adjRev  = d.adj.收入    || 0;
+    const adjProf = d.adj.營業利潤 || 0;
+    const actRev  = d.actual ? (d.actual.收入    ||0) : null;
+    const actProf = d.actual ? (d.actual.營業利潤 ||0) : null;
+    const fy25Rev  = d.fy25.收入    || 0;
+    const fy25Prof = d.fy25.營業利潤 || 0;
+    const ach = (actRev!=null&&adjRev) ? actRev/adjRev : null;
+    const yoyRev = fy25Rev ? ((actRev!=null?actRev:adjRev)-fy25Rev)/Math.abs(fy25Rev) : null;
+    const profRate = (actRev||adjRev) ? (actProf!=null?actProf:adjProf)/(actRev||adjRev) : null;
+    const achCls = ach==null?'ach-na':ach>=1?'ach-high':'ach-low';
+    const achTxt = ach==null?'—':(ach*100).toFixed(0)+'%';
+
+    // accumulate totals
+    totRow.adj.收入     += adjRev;  totRow.adj.營業利潤  += adjProf;
+    totRow.fy25.收入    += fy25Rev; totRow.fy25.營業利潤 += fy25Prof;
+    if (actRev!=null)  { totRow.act.收入     += actRev; }
+    if (actProf!=null) { totRow.act.營業利潤 += actProf; }
+
+    html += `<tr>
+      <td style="display:table-cell;padding:8px 12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="biz-bar" style="background:${color}"></div>
+          <span style="font-weight:600;color:var(--color-text)">${biz}</span>
+        </div>
+      </td>
+      <td>${fmtM(adjRev)}</td>
+      <td class="col-actual">${actRev!=null?fmtM(actRev):'—'}</td>
+      <td><span class="ach-badge ${achCls}">${achTxt}</span></td>
+      <td>${fmtM(fy25Rev)}</td>
+      <td class="${yoyRev!=null?(yoyRev>=0?'pos':'neg'):'neutral-v'}">${yoyRev!=null?((yoyRev>=0?'▲':'▼')+Math.abs(yoyRev*100).toFixed(0)+'%'):'—'}</td>
+      <td>${fmtM(adjProf)}</td>
+      <td class="${actProf!=null?(actProf>=0?'pos':'neg'):''}">${actProf!=null?fmtM(actProf):'—'}</td>
+      <td class="${profRate!=null?(profRate>=0?'pos':'neg'):'neutral-v'}">${profRate!=null?(profRate*100).toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  }
+
+  // 合計行
+  const totAch = totRow.adj.收入 ? totRow.act.收入/totRow.adj.收入 : null;
+  const totAchCls = totAch==null?'ach-na':totAch>=1?'ach-high':'ach-low';
+  const totYoy = totRow.fy25.收入 ? (totRow.act.收入-totRow.fy25.收入)/Math.abs(totRow.fy25.收入) : null;
+  const totProfRate = totRow.act.收入 ? totRow.act.營業利潤/totRow.act.收入 : null;
+  html += `<tr class="total-row">
+    <td style="display:table-cell;padding:8px 12px"><div style="display:flex;align-items:center;gap:8px"><div class="biz-bar" style="background:var(--color-chart)"></div><span>合計</span></div></td>
+    <td>${fmtM(totRow.adj.收入)}</td>
+    <td class="col-actual">${fmtM(totRow.act.收入)||'—'}</td>
+    <td><span class="ach-badge ${totAchCls}">${totAch!=null?(totAch*100).toFixed(0)+'%':'—'}</span></td>
+    <td>${fmtM(totRow.fy25.收入)}</td>
+    <td class="${totYoy!=null?(totYoy>=0?'pos':'neg'):'neutral-v'}">${totYoy!=null?((totYoy>=0?'▲':'▼')+Math.abs(totYoy*100).toFixed(0)+'%'):'—'}</td>
+    <td>${fmtM(totRow.adj.營業利潤)}</td>
+    <td class="${totRow.act.營業利潤>=0?'pos':'neg'}">${fmtM(totRow.act.營業利潤)||'—'}</td>
+    <td class="${totProfRate!=null?(totProfRate>=0?'pos':'neg'):'neutral-v'}">${totProfRate!=null?(totProfRate*100).toFixed(1)+'%':'—'}</td>
+  </tr>`;
+  html += '</tbody>';
+  document.getElementById('tbl-monthly-pl').innerHTML = html;
+}
+
+// ─── 多月趨勢視圖 ────────────────────────────────
+function renderMonthlyMulti(months) {
+  const bizList = MONTH_STATE.selectedBiz;
+  const metric  = MONTH_STATE.metric;
+  const sortedMonths = [...months].sort();
+
+  destroyChart('monthly-trend');
+  const datasets = bizList.map(biz => {
+    const color = BIZ_COLORS[biz]||'#64748b';
+    return {
+      label: biz,
+      data: sortedMonths.map(m => {
+        const a = (DATA.fy26_actual[biz]||{})[m];
+        const v = a ? (a[metric]||0) : ((DATA.budget_adj[biz]||{})[m]||{})[metric]||0;
+        return v/1000;
+      }),
+      borderColor: color, backgroundColor: color+'22',
+      fill: true, tension:.3, pointRadius:5, borderWidth:2,
+      datalabels:{
+        display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
+        formatter:(v)=>fmtM(v*1000),
+        font:{size:9,weight:'600'}, color:'var(--color-text)',
+        anchor:'top', align:'top'
+      }
+    };
+  });
+
+  const labels = sortedMonths.map(m => getMonthLabel(m));
+  document.getElementById('monthly-trend-title').textContent =
+    `事業別 月別 ${metric} 趨勢（有實績月份為實績，其餘為期初調整）`;
+
+  Chart.register(ChartDataLabels);
+  CHARTS['monthly-trend'] = new Chart(document.getElementById('chart-monthly-trend'), {
+    type:'line', plugins:[ChartDataLabels],
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:12}},
+        datalabels:{}
+      },
+      scales:{
+        x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}},
+        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>fmtM(v*1000)},grid:{color:'rgba(12,74,110,.06)'}}
+      }
+    }
+  });
+
+  // 累計表
+  let tblHtml = `<thead><tr>
+    <th style="text-align:left">事業別</th>
+    <th>期初調整累計</th><th>FY26實績累計</th><th>達成率</th><th>FY25同期累計</th><th>YoY</th>
+  </tr></thead><tbody>`;
+  for (const biz of bizList) {
+    const color = BIZ_COLORS[biz]||'#64748b';
+    let adj=0,act=null,fy25=0;
+    for (const m of sortedMonths) {
+      adj  += (DATA.budget_adj[biz]||{})[m]?.[metric]||0;
+      const a=(DATA.fy26_actual[biz]||{})[m]; if(a) act=(act||0)+(a[metric]||0);
+      fy25 += (DATA.fy25_actual[biz]||{})[String(parseInt(m)-100)]?.[metric]||0;
+    }
+    const ach = (act!=null&&adj)?act/adj:null;
+    const yoy = fy25?((act!=null?act:adj)-fy25)/Math.abs(fy25):null;
+    tblHtml += `<tr>
+      <td style="display:table-cell;padding:8px 12px"><div style="display:flex;align-items:center;gap:8px"><div class="biz-bar" style="background:${color}"></div><span style="font-weight:600">${biz}</span></div></td>
+      <td>${fmtM(adj)}</td>
+      <td class="col-actual">${act!=null?fmtM(act):'—'}</td>
+      <td><span class="ach-badge ${ach==null?'ach-na':ach>=1?'ach-high':'ach-low'}">${ach!=null?(ach*100).toFixed(0)+'%':'—'}</span></td>
+      <td>${fmtM(fy25)}</td>
+      <td class="${yoy!=null?(yoy>=0?'pos':'neg'):'neutral-v'}">${yoy!=null?((yoy>=0?'▲':'▼')+Math.abs(yoy*100).toFixed(0)+'%'):'—'}</td>
+    </tr>`;
+  }
+  tblHtml += '</tbody>';
+  document.getElementById('tbl-monthly-multi').innerHTML = tblHtml;
+}
+
+// showPage 需要支援 monthly
+const _origShowPage = showPage;
+
 loadState();
 renderPage('overview');
 </script>
