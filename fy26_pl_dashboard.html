@@ -663,7 +663,7 @@ html, body {
 
   <div class="dashboard-header">
     <h2 class="dashboard-title">FY26 全公司 PL 總覽</h2>
-    <p class="dashboard-subtitle">FY26（202604–202703）&nbsp;·&nbsp;對比：期初目標 / 期初調整 / FY25實績 / FY26實績&nbsp;·&nbsp;單位：千元 NTD</p>
+    <p class="dashboard-subtitle">FY26（202604–202703）&nbsp;·&nbsp;對比：期初目標 / 期初調整 / FY25實績 / FY26實績&nbsp;·&nbsp;單位：萬元 NTD</p>
   </div>
 
   <div class="section">
@@ -732,7 +732,7 @@ html, body {
     </div></div>
   </div>
   <div class="section card">
-    <div class="section-hdr"><h3>共通費用 詳細對比（千元）</h3></div>
+    <div class="section-hdr"><h3>共通費用 詳細對比（萬元）</h3></div>
     <div class="tbl-wrap"><table class="data-table" id="tbl-common"></table></div>
   </div>
 </div></div><!-- /page-common -->
@@ -828,7 +828,7 @@ html, body {
     <div class="grid grid-2 section">
       <div class="card">
         <div class="chart-wrapper" style="height:320px">
-          <div class="chart-title" id="monthly-bar-title">各事業別 月別收入（千元）</div>
+          <div class="chart-title" id="monthly-bar-title">各事業別 月別收入（萬元）</div>
           <canvas id="chart-monthly-bar" style="max-height:280px"></canvas>
         </div>
       </div>
@@ -844,7 +844,7 @@ html, body {
     <div class="section card">
       <div class="section-hdr">
         <h3 id="monthly-tbl-title">事業別損益表</h3>
-        <span class="notice">單位：百萬元（M NTD）</span>
+        <span class="notice">單位：萬元 NTD</span>
       </div>
       <div class="tbl-wrap">
         <table class="data-table monthly-pl-table" id="tbl-monthly-pl"></table>
@@ -862,7 +862,7 @@ html, body {
       </div>
     </div>
     <div class="section card">
-      <div class="section-hdr"><h3>選定期間 事業別累計</h3><span class="notice">單位：百萬元（M NTD）</span></div>
+      <div class="section-hdr"><h3>選定期間 事業別累計</h3><span class="notice">單位：萬元 NTD</span></div>
       <div class="tbl-wrap">
         <table class="data-table monthly-pl-table" id="tbl-monthly-multi"></table>
       </div>
@@ -952,10 +952,11 @@ function getForecastPct(biz) {
 // ═══════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════
-const fmt = (n, unit=1000) => {
+const fmt = (n, unit=10000) => {
   if (n == null) return '—';
   const v = n / unit;
-  return v.toLocaleString('zh-TW', {minimumFractionDigits:0, maximumFractionDigits:0});
+  const dec = Math.abs(v)>=1000?0:Math.abs(v)>=100?0:Math.abs(v)>=10?1:2;
+  return v.toLocaleString('zh-TW', {minimumFractionDigits:dec, maximumFractionDigits:dec});
 };
 const fmtPct = (v, suffix='%') => v == null ? '—' : (v*100).toFixed(1) + suffix;
 const pctClass = (v, inverse=false) => {
@@ -1110,7 +1111,7 @@ function renderOverview() {
   cardsEl.innerHTML = cards.map(c => `
     <div class="card kpi-card" style="--tile-accent:${c.color};border-top:3px solid ${c.color}">
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value" style="color:${c.color}">${fmt(c.val)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:${c.color}">${fmt(c.val)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">${c.sub}</div>
     </div>`).join('');
 
@@ -1126,11 +1127,11 @@ function renderOverview() {
     data: {
       labels: bizProfitData.map(d => d.biz),
       datasets: [
-        {label:'FY26期初調整', data: bizProfitData.map(d=>d.adj/1000), backgroundColor: C.adj+'bb'},
-        {label:'FY25實績',     data: bizProfitData.map(d=>d.fy25/1000), backgroundColor: C.fy25+'bb'},
+        {label:'FY26期初調整', data: bizProfitData.map(d=>d.adj/10000), backgroundColor: C.adj+'bb'},
+        {label:'FY25實績',     data: bizProfitData.map(d=>d.fy25/10000), backgroundColor: C.fy25+'bb'},
       ]
     },
-    options: chartOpts('千元', true)
+    options: chartOpts('萬元', true)
   });
 
   // Chart: 全公司月別收入追蹤
@@ -1145,12 +1146,12 @@ function renderOverview() {
   const fy25Monthly = MONTHS_FY26.map((m,i) => {
     const m25 = fy25MonthOf(m);
     let s=0; for(const b of BIZ_LIST) s+=((DATA.fy25_actual[b]||{})[m25]||{}).收入||0;
-    return s/1000;
+    return s/10000;
   });
   const actualRevM = MONTHS_FY26.map(m => {
     const a = (DATA.fy26_actual||{});
     let s=0; for(const b of BIZ_LIST) s+=((a[b]||{})[m]||{}).收入||0;
-    return s>0?s/1000:null;
+    return s>0?s/10000:null;
   });
   CHARTS['total-monthly'] = new Chart(document.getElementById('chart-total-monthly'), {
     type:'line',
@@ -1163,7 +1164,7 @@ function renderOverview() {
         {label:'FY26實績',    data:actualRevM,    borderColor:C.actual,pointRadius:6,borderWidth:2,tension:.3,fill:false,spanGaps:false},
       ]
     },
-    options: chartOpts('千元')
+    options: chartOpts('萬元')
   });
 
   // Table: Full PL overview (incl 共通)
@@ -1303,27 +1304,27 @@ function renderBizContent(biz) {
   <div class="grid grid-5" style="margin-bottom:16px">
     <div class="card kpi-card" style="border-top:3px solid var(--color-muted)">
       <div class="kpi-label">FY26 期初 收入目標</div>
-      <div class="kpi-value" style="color:var(--color-muted)">${fmt(bi.收入)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:var(--color-muted)">${fmt(bi.收入)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">利潤：${fmt(bi.營業利潤)}</div>
     </div>
     <div class="card kpi-card" style="border-top:3px solid var(--color-chart)">
       <div class="kpi-label">FY26 期初調整 收入目標</div>
-      <div class="kpi-value" style="color:var(--color-chart)">${fmt(ba.收入)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:var(--color-chart)">${fmt(ba.收入)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">利潤：${fmt(ba.營業利潤)}</div>
     </div>
     <div class="card kpi-card" style="border-top:3px solid #059669">
       <div class="kpi-label">FY25 實績 收入</div>
-      <div class="kpi-value" style="color:#059669">${fmt(f25.收入)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:#059669">${fmt(f25.收入)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">利潤：${fmt(f25.營業利潤)}</div>
     </div>
     <div class="card kpi-card" style="border-top:3px solid #d97706">
       <div class="kpi-label">FY26 累計實績 收入</div>
-      <div class="kpi-value" style="color:#d97706">${fmt(f26.收入)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:#d97706">${fmt(f26.收入)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">vs期初調整：<span class="${pctClass(achVsAdj && achVsAdj-1)}">${achVsAdj!=null?fmtPct(achVsAdj-1):'—'}</span></div>
     </div>
     <div class="card kpi-card" style="border-top:3px solid #7c3aed">
       <div class="kpi-label">保守推估 全年收入</div>
-      <div class="kpi-value" style="color:#7c3aed">${fmt(fc.收入)}<span class="kpi-note">千元</span></div>
+      <div class="kpi-value" style="color:#7c3aed">${fmt(fc.收入)}<span class="kpi-note">萬元</span></div>
       <div class="kpi-sub">推估利潤：${fmt(fc.營業利潤)}</div>
     </div>
   </div>
@@ -1333,7 +1334,7 @@ function renderBizContent(biz) {
       ${renderBizPLTable(biz, bi, ba, f25, f26, fc)}
     </div>
     <div class="card"><div class="chart-wrapper">
-      <div class="chart-title">月別 銷貨收入 追蹤（千元）</div>
+      <div class="chart-title">月別 銷貨收入 追蹤（萬元）</div>
       <canvas id="chart-biz-monthly"></canvas>
     </div>
   </div>
@@ -1371,7 +1372,7 @@ function renderBizPLTable(biz, bi, ba, f25, f26, fc) {
     </tr>`;
   }).join('');
 
-  return `<div style="font-size:12px;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">年度 PL 對比（千元）</div>
+  return `<div style="font-size:12px;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">年度 PL 對比（萬元）</div>
   <div class="tbl-wrap">
   <table>
   <thead><tr>
@@ -1410,9 +1411,9 @@ function renderForecastPanel(biz, pct, fc, ba, f25) {
 
 function renderFcResult(biz, fc, ba, f25) {
   const items = [
-    {lbl:'推估全年收入',val:fmt(fc.收入)+'千元',color:'#7c3aed'},
+    {lbl:'推估全年收入',val:fmt(fc.收入)+'萬元',color:'#7c3aed'},
     {lbl:'vs期初調整',val:(ba.收入>0?fmtPct(fc.收入/ba.收入-1):'—'),color:fc.收入>ba.收入?'#059669':'#dc2626'},
-    {lbl:'推估全年利潤',val:fmt(fc.營業利潤)+'千元',color:'#7c3aed'},
+    {lbl:'推估全年利潤',val:fmt(fc.營業利潤)+'萬元',color:'#7c3aed'},
     {lbl:'vs FY25利潤',val:(f25.營業利潤!==0?fmtPct((fc.營業利潤-f25.營業利潤)/Math.abs(f25.營業利潤)):'—'),
       color:fc.營業利潤>f25.營業利潤?'#059669':'#dc2626'},
   ];
@@ -1439,7 +1440,7 @@ function renderBizKPISection(biz) {
       <h4>📦 學習商品 KPI 驅動指標</h4>
       <div class="kpi-charts-grid" id="kpi-learn-biz">
         <div class="kpi-chart-box"><div class="title">月別銷售數量（套）</div><canvas id="kc-learn-qty"></canvas></div>
-        <div class="kpi-chart-box"><div class="title">月別銷售金額（千元）</div><canvas id="kc-learn-rev"></canvas></div>
+        <div class="kpi-chart-box"><div class="title">月別銷售金額（萬元）</div><canvas id="kc-learn-rev"></canvas></div>
         <div class="kpi-chart-box"><div class="title">月別平均單價（NTD）</div><canvas id="kc-learn-price"></canvas></div>
       </div>
       <div class="kpi-charts-grid" style="margin-top:12px">
@@ -1462,14 +1463,14 @@ function renderBizKPISection(biz) {
 
 function drawBizMonthlyChart(biz) {
   destroyChart('biz-monthly');
-  const initData  = MONTHS_FY26.map(m => ((DATA.budget_init[biz]||{})[m]||{}).收入/1000||0);
-  const adjData   = MONTHS_FY26.map(m => ((DATA.budget_adj[biz] ||{})[m]||{}).收入/1000||0);
+  const initData  = MONTHS_FY26.map(m => ((DATA.budget_init[biz]||{})[m]||{}).收入/10000||0);
+  const adjData   = MONTHS_FY26.map(m => ((DATA.budget_adj[biz] ||{})[m]||{}).收入/10000||0);
   const fy25Data  = MONTHS_FY26.map((_,i) => {
     const m25=fy25MonthOf(MONTHS_FY26[i]);
-    return ((DATA.fy25_actual[biz]||{})[m25]||{}).收入/1000||0;
+    return ((DATA.fy25_actual[biz]||{})[m25]||{}).收入/10000||0;
   });
-  const actualData = monthlyActualSeries(biz,'收入').map(v=>v!=null?v/1000:null);
-  const fcData     = monthlyForecastSeries(biz,'收入').map(v=>v!=null?v/1000:null);
+  const actualData = monthlyActualSeries(biz,'收入').map(v=>v!=null?v/10000:null);
+  const fcData     = monthlyForecastSeries(biz,'收入').map(v=>v!=null?v/10000:null);
 
   CHARTS['biz-monthly'] = new Chart(document.getElementById('chart-biz-monthly'), {
     type:'line',
@@ -1483,7 +1484,7 @@ function drawBizMonthlyChart(biz) {
         {label:'FY26推估',    data:fcData,     borderColor:C.forecast,borderDash:[4,3],pointRadius:4,tension:.3,fill:false,spanGaps:false},
       ]
     },
-    options: chartOpts('千元')
+    options: chartOpts('萬元')
   });
 }
 
@@ -1516,7 +1517,7 @@ function drawBizKPICharts(biz) {
     destroyChart('kc-web');
     destroyChart('kc-tel');
     CHARTS['kc-learn-qty']   = new Chart(document.getElementById('kc-learn-qty'),   {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('学習商品販売数')},options:kpiOpts('套')});
-    CHARTS['kc-learn-rev']   = new Chart(document.getElementById('kc-learn-rev'),   {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('学習商品売上高',1000)},options:kpiOpts('千元')});
+    CHARTS['kc-learn-rev']   = new Chart(document.getElementById('kc-learn-rev'),   {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('学習商品売上高',10000)},options:kpiOpts('萬元')});
     CHARTS['kc-learn-price'] = new Chart(document.getElementById('kc-learn-price'), {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('学習商品単価')},options:kpiOpts('NTD')});
     CHARTS['kc-line'] = new Chart(document.getElementById('kc-line'), {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('LINE新規会員数')},options:kpiOpts('人')});
     CHARTS['kc-web']  = new Chart(document.getElementById('kc-web'),  {type:'line',data:{labels:MONTH_LABELS,datasets:kpiDatasets('学習商品WEB販売数')},options:kpiOpts('套')});
@@ -1549,7 +1550,7 @@ function renderCommon() {
     {label:'FY26累計實績 費用',val:fmt(-f26.營業利潤),sub:`利潤: ${fmt(f26.營業利潤)}`},
   ].map((c,i)=>`<div class="card kpi-card" style="border-top:3px solid ${commonColors[i]}">
     <div class="kpi-label">${c.label}</div>
-    <div class="kpi-value" style="color:${commonColors[i]}">${c.val}<span class="kpi-note">千元</span></div>
+    <div class="kpi-value" style="color:${commonColors[i]}">${c.val}<span class="kpi-note">萬元</span></div>
     <div class="kpi-sub">${c.sub}</div>
   </div>`).join('');
 
@@ -1561,20 +1562,20 @@ function renderCommon() {
     data:{
       labels:cats.map(k=>METRIC_LABELS[k]),
       datasets:[
-        {label:'FY26期初',  data:cats.map(k=>bi[k]/1000), backgroundColor:C.init+'bb'},
-        {label:'FY26期初調整',data:cats.map(k=>ba[k]/1000),backgroundColor:C.adj+'bb'},
-        {label:'FY25實績',  data:cats.map(k=>f25[k]/1000),backgroundColor:C.fy25+'bb'},
+        {label:'FY26期初',  data:cats.map(k=>bi[k]/10000), backgroundColor:C.init+'bb'},
+        {label:'FY26期初調整',data:cats.map(k=>ba[k]/10000),backgroundColor:C.adj+'bb'},
+        {label:'FY25實績',  data:cats.map(k=>f25[k]/10000),backgroundColor:C.fy25+'bb'},
       ]
     },
-    options: chartOpts('千元', true)
+    options: chartOpts('萬元', true)
   });
 
   // Monthly chart
   destroyChart('common-monthly');
-  const cmData = (src) => MONTHS_FY26.map(m => -((src['共通']||{})[m]||{}).營業利潤/1000||0);
+  const cmData = (src) => MONTHS_FY26.map(m => -((src['共通']||{})[m]||{}).營業利潤/10000||0);
   const cmF25  = MONTHS_FY26.map((_,i) => {
     const m25=fy25MonthOf(MONTHS_FY26[i]);
-    return -((DATA.fy25_actual['共通']||{})[m25]||{}).營業利潤/1000||0;
+    return -((DATA.fy25_actual['共通']||{})[m25]||{}).營業利潤/10000||0;
   });
   CHARTS['common-monthly'] = new Chart(document.getElementById('chart-common-monthly'), {
     type:'line',
@@ -1583,7 +1584,7 @@ function renderCommon() {
       {label:'FY26期初調整',data:cmData(DATA.budget_adj),  borderColor:C.adj,   borderDash:[5,4],pointRadius:2,tension:.3,fill:false},
       {label:'FY25同期',    data:cmF25,                    borderColor:C.fy25,  pointRadius:3,tension:.3,fill:false},
     ]},
-    options: chartOpts('千元')
+    options: chartOpts('萬元')
   });
 
   // Table
@@ -1620,7 +1621,7 @@ function renderKPI() {
   // 學習商品 KPI charts
   const learnKPIs = [
     {id:'kpi-learn-qty2',    key:'学習商品販売数',  title:'月別銷售數量（套）',    unit:1},
-    {id:'kpi-learn-rev2',    key:'学習商品売上高',  title:'月別銷售金額（千元）',   unit:1000},
+    {id:'kpi-learn-rev2',    key:'学習商品売上高',  title:'月別銷售金額（萬元）',   unit:1000},
     {id:'kpi-learn-price2',  key:'学習商品単価',    title:'月別平均單價（NTD）',   unit:1},
     {id:'kpi-line2',         key:'LINE新規会員数',  title:'LINE 新規會員數',       unit:1},
     {id:'kpi-web2',          key:'学習商品WEB販売数',title:'WEB 銷售數',           unit:1},
@@ -1669,7 +1670,7 @@ function renderKPI() {
     borderColor:chColors[i],fill:false,tension:.3,pointRadius:2
   }));
   CHARTS['fy25-ch-amt']=new Chart(document.getElementById('chart-fy25-channel-amt'),{
-    type:'line',data:{labels:MONTH_LABELS,datasets:mkChDs(DATA.fy25_learn_amount,1000)},options:chartOpts('千元')
+    type:'line',data:{labels:MONTH_LABELS,datasets:mkChDs(DATA.fy25_learn_amount,10000)},options:chartOpts('萬元')
   });
   CHARTS['fy25-ch-qty']=new Chart(document.getElementById('chart-fy25-channel-qty'),{
     type:'line',data:{labels:MONTH_LABELS,datasets:mkChDs(DATA.fy25_learn_qty,1)},options:chartOpts('套')
@@ -1685,11 +1686,15 @@ function chartOpts(unit='', horizontal=false) {
     responsive:true, maintainAspectRatio:true,
     plugins:{
       legend:{position:'bottom',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:12,padding:10}},
-      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?ctx.raw.toLocaleString():'—'} ${unit}`}}
+      tooltip:{callbacks:{label:ctx=>{
+        if(ctx.raw==null)return `${ctx.dataset.label}: —`;
+        const actual=ctx.raw*10000;
+        return `${ctx.dataset.label}: ${fmtWan(actual)}  (實際: ${fmtActual(actual)})`;
+      }}}
     },
     scales:{
       x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}},
-      y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>v!=null?v.toLocaleString():v},grid:{color:'rgba(12,74,110,.07)'},title:{display:!!unit&&!horizontal,text:unit,color:'var(--color-muted)',font:{size:10}}}
+      y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>v!=null?(+v.toFixed(1)).toLocaleString('zh-TW')+'萬':v},grid:{color:'rgba(12,74,110,.07)'},title:{display:!!unit&&!horizontal,text:unit,color:'var(--color-muted)',font:{size:10}}}
     }
   };
 }
@@ -1823,13 +1828,22 @@ const MONTH_STATE = {
   metric:         '收入',
 };
 
-const fmtM = n => {
+const fmtWan = n => {
   if (n == null) return '—';
   const s = n < 0 ? '-' : '';
   const a = Math.abs(n);
-  if (a >= 1e6) return s + (a/1e6).toFixed(1) + 'M';
-  if (a >= 1e3) return s + (a/1e3).toFixed(0) + 'K';
-  return s + Math.round(a);
+  const w = a / 10000;
+  if (w >= 10000) return s + (w/10000).toFixed(2) + '億';
+  if (w >= 1000)  return s + Math.round(w).toLocaleString('zh-TW') + '萬';
+  if (w >= 100)   return s + w.toFixed(0) + '萬';
+  if (w >= 10)    return s + w.toFixed(1) + '萬';
+  if (w >= 1)     return s + w.toFixed(2) + '萬';
+  return s + a.toFixed(0);
+};
+// 實際金額（Tooltip用）
+const fmtActual = n => {
+  if (n == null) return '—';
+  return Math.round(n).toLocaleString('zh-TW') + ' NTD';
 };
 
 function getMonthLabel(m) {
@@ -1992,7 +2006,7 @@ function renderMonthlySingle(month) {
      sub: achAdj!=null ? `達成(vs期初調整)：${(achAdj*100).toFixed(1)}%` : '尚無實績'},
   ].map(c=>`<div class="card kpi-card" style="border-top:3px solid ${c.color}">
     <div class="kpi-label">${c.label}</div>
-    <div class="kpi-value" style="color:${c.color}">${fmtM(c.val)}<span class="kpi-note">NTD</span></div>
+    <div class="kpi-value" style="color:${c.color}">${fmtWan(c.val)}<span class="kpi-note">NTD</span></div>
     <div class="kpi-sub">${c.sub}</div>
   </div>`).join('');
 
@@ -2003,9 +2017,9 @@ function renderMonthlySingle(month) {
   // ── 長條圖 ──────────────────────────────────────
   destroyChart('monthly-bar');
   const labels = bizList;
-  const adjData   = bizList.map(b => (getBizMonthData(b,month).adj[metric]  ||0)/1000);
-  const actData   = bizList.map(b => { const a=getBizMonthData(b,month).actual; return a?(a[metric]||0)/1000:null; });
-  const fy25Data  = bizList.map(b => (getBizMonthData(b,month).fy25[metric] ||0)/1000);
+  const adjData   = bizList.map(b => (getBizMonthData(b,month).adj[metric]  ||0)/100000);
+  const actData   = bizList.map(b => { const a=getBizMonthData(b,month).actual; return a?(a[metric]||0)/10000:null; });
+  const fy25Data  = bizList.map(b => (getBizMonthData(b,month).fy25[metric] ||0)/100000);
   const bgColors  = bizList.map(b => BIZ_COLORS[b]||'#64748b');
 
   Chart.register(ChartDataLabels);
@@ -2024,7 +2038,7 @@ function renderMonthlySingle(month) {
           borderColor:bgColors, borderWidth:1, borderRadius:4,
           datalabels:{
             display:true, anchor:'end', align:'top',
-            formatter:(v,ctx)=>v!=null?fmtM(v*1000):'',
+            formatter:(v,ctx)=>v!=null?fmtWan(v*10000):'',
             font:{size:10,weight:'700'}, color:ctx=>BIZ_COLORS[bizList[ctx.dataIndex]]||'#333'
           }
         },
@@ -2042,14 +2056,14 @@ function renderMonthlySingle(month) {
       responsive:true, maintainAspectRatio:false,
       plugins:{
         legend:{position:'bottom',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:12}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtM((ctx.raw||0)*1000)}`}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${fmtWan((ctx.raw||0)*10000)}`}},
         datalabels:{}
       },
       scales:{
         x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{display:false}},
-        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>fmtM(v*1000)},
+        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>fmtWan(v*10000)},
            grid:{color:'rgba(12,74,110,.06)'},
-           title:{display:true,text:'千元',color:'var(--color-muted)',font:{size:10}}}
+           title:{display:true,text:'萬元',color:'var(--color-muted)',font:{size:10}}}
       }
     }
   });
@@ -2088,7 +2102,7 @@ function renderMonthlySingle(month) {
       responsive:true, maintainAspectRatio:false, cutout:'60%',
       plugins:{
         legend:{position:'right',labels:{color:'var(--color-muted)',font:{size:11},boxWidth:10,padding:8}},
-        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtM(ctx.raw*1000)} (${((ctx.raw/totalRev)*100).toFixed(1)}%)`}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmtWan(ctx.raw*1000)} (${((ctx.raw/totalRev)*100).toFixed(1)}%)`}},
         datalabels:{}
       }
     }
@@ -2131,13 +2145,13 @@ function renderMonthlySingle(month) {
           <span style="font-weight:600;color:var(--color-text)">${biz}</span>
         </div>
       </td>
-      <td>${fmtM(adjRev)}</td>
-      <td class="col-actual">${actRev!=null?fmtM(actRev):'—'}</td>
+      <td>${fmtWan(adjRev)}</td>
+      <td class="col-actual">${actRev!=null?fmtWan(actRev):'—'}</td>
       <td><span class="ach-badge ${achCls}">${achTxt}</span></td>
-      <td>${fmtM(fy25Rev)}</td>
+      <td>${fmtWan(fy25Rev)}</td>
       <td class="${yoyRev!=null?(yoyRev>=0?'pos':'neg'):'neutral-v'}">${yoyRev!=null?((yoyRev>=0?'▲':'▼')+Math.abs(yoyRev*100).toFixed(0)+'%'):'—'}</td>
-      <td>${fmtM(adjProf)}</td>
-      <td class="${actProf!=null?(actProf>=0?'pos':'neg'):''}">${actProf!=null?fmtM(actProf):'—'}</td>
+      <td>${fmtWan(adjProf)}</td>
+      <td class="${actProf!=null?(actProf>=0?'pos':'neg'):''}">${actProf!=null?fmtWan(actProf):'—'}</td>
       <td class="${profRate!=null?(profRate>=0?'pos':'neg'):'neutral-v'}">${profRate!=null?(profRate*100).toFixed(1)+'%':'—'}</td>
     </tr>`;
   }
@@ -2149,13 +2163,13 @@ function renderMonthlySingle(month) {
   const totProfRate = totRow.act.收入 ? totRow.act.營業利潤/totRow.act.收入 : null;
   html += `<tr class="total-row">
     <td style="display:table-cell;padding:8px 12px"><div style="display:flex;align-items:center;gap:8px"><div class="biz-bar" style="background:var(--color-chart)"></div><span>合計</span></div></td>
-    <td>${fmtM(totRow.adj.收入)}</td>
-    <td class="col-actual">${fmtM(totRow.act.收入)||'—'}</td>
+    <td>${fmtWan(totRow.adj.收入)}</td>
+    <td class="col-actual">${fmtWan(totRow.act.收入)||'—'}</td>
     <td><span class="ach-badge ${totAchCls}">${totAch!=null?(totAch*100).toFixed(0)+'%':'—'}</span></td>
-    <td>${fmtM(totRow.fy25.收入)}</td>
+    <td>${fmtWan(totRow.fy25.收入)}</td>
     <td class="${totYoy!=null?(totYoy>=0?'pos':'neg'):'neutral-v'}">${totYoy!=null?((totYoy>=0?'▲':'▼')+Math.abs(totYoy*100).toFixed(0)+'%'):'—'}</td>
-    <td>${fmtM(totRow.adj.營業利潤)}</td>
-    <td class="${totRow.act.營業利潤>=0?'pos':'neg'}">${fmtM(totRow.act.營業利潤)||'—'}</td>
+    <td>${fmtWan(totRow.adj.營業利潤)}</td>
+    <td class="${totRow.act.營業利潤>=0?'pos':'neg'}">${fmtWan(totRow.act.營業利潤)||'—'}</td>
     <td class="${totProfRate!=null?(totProfRate>=0?'pos':'neg'):'neutral-v'}">${totProfRate!=null?(totProfRate*100).toFixed(1)+'%':'—'}</td>
   </tr>`;
   html += '</tbody>';
@@ -2176,13 +2190,13 @@ function renderMonthlyMulti(months) {
       data: sortedMonths.map(m => {
         const a = (DATA.fy26_actual[biz]||{})[m];
         const v = a ? (a[metric]||0) : ((DATA.budget_adj[biz]||{})[m]||{})[metric]||0;
-        return v/1000;
+        return v/10000;
       }),
       borderColor: color, backgroundColor: color+'22',
       fill: true, tension:.3, pointRadius:5, borderWidth:2,
       datalabels:{
         display:ctx=>ctx.dataset.data[ctx.dataIndex]!=null,
-        formatter:(v)=>fmtM(v*1000),
+        formatter:(v)=>fmtWan(v*10000),
         font:{size:9,weight:'600'}, color:'var(--color-text)',
         anchor:'top', align:'top'
       }
@@ -2205,7 +2219,7 @@ function renderMonthlyMulti(months) {
       },
       scales:{
         x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}},
-        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>fmtM(v*1000)},grid:{color:'rgba(12,74,110,.06)'}}
+        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>(+((v||0).toFixed(0))).toLocaleString('zh-TW')+'萬',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}}
       }
     }
   });
@@ -2227,10 +2241,10 @@ function renderMonthlyMulti(months) {
     const yoy = fy25?((act!=null?act:adj)-fy25)/Math.abs(fy25):null;
     tblHtml += `<tr>
       <td style="display:table-cell;padding:8px 12px"><div style="display:flex;align-items:center;gap:8px"><div class="biz-bar" style="background:${color}"></div><span style="font-weight:600">${biz}</span></div></td>
-      <td>${fmtM(adj)}</td>
-      <td class="col-actual">${act!=null?fmtM(act):'—'}</td>
+      <td>${fmtWan(adj)}</td>
+      <td class="col-actual">${act!=null?fmtWan(act):'—'}</td>
       <td><span class="ach-badge ${ach==null?'ach-na':ach>=1?'ach-high':'ach-low'}">${ach!=null?(ach*100).toFixed(0)+'%':'—'}</span></td>
-      <td>${fmtM(fy25)}</td>
+      <td>${fmtWan(fy25)}</td>
       <td class="${yoy!=null?(yoy>=0?'pos':'neg'):'neutral-v'}">${yoy!=null?((yoy>=0?'▲':'▼')+Math.abs(yoy*100).toFixed(0)+'%'):'—'}</td>
     </tr>`;
   }
