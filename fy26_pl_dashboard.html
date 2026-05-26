@@ -233,6 +233,9 @@
   background: color-mix(in srgb, var(--color-main) 6%, var(--color-card));
 }
 .ds-root .data-table tbody tr:hover { background: color-mix(in srgb, var(--color-main) 5%, transparent); }
+.acc-item { display: none; }
+.acc-trigger:hover { background: color-mix(in srgb, var(--color-chart) 8%, transparent) !important; }
+.acc-arrow { display:inline-block; width:14px; transition:transform 0.15s; font-size:10px; }
 .ds-root .data-table tbody tr:last-child td { border-bottom: none; }
 
 /* Badge */
@@ -651,6 +654,9 @@ html, body {
     <button class="nav-tab" onclick="showPage('vendor')">廠商分析</button>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:12px;color:var(--color-muted)">對比基準：</span>
+    <button class="metric-pill compare-base-pill active" onclick="setCompareBase('adj',this)" style="font-size:12px;padding:4px 10px">期初調整</button>
+    <button class="metric-pill compare-base-pill" onclick="setCompareBase('init',this)" style="font-size:12px;padding:4px 10px">期初</button>
     <button class="hdr-btn secondary" onclick="openImport()">⬆ 匯入 Excel</button>
     <button class="hdr-btn primary" onclick="exportHTML()">⬇ 匯出 HTML</button>
   </div>
@@ -684,6 +690,14 @@ html, body {
         <canvas id="chart-total-monthly"></canvas>
       </div>
     </div>
+  </div>
+
+  <div class="section card">
+    <div class="section-hdr">
+      <h3 id="wf-overview-title">全公司 利潤橋接（推估 vs 對比目標）</h3>
+      <span class="notice">目標利潤 → 收入差 → 成本差 → 費用差 → 推估利潤</span>
+    </div>
+    <div class="chart-wrapper" style="height:220px"><canvas id="chart-overview-waterfall"></canvas></div>
   </div>
 
   <div class="section card">
@@ -794,6 +808,11 @@ html, body {
             <div class="dd-actions">
               <button onclick="selectAllMonths()">全選</button>
               <button onclick="clearMonths()">清除</button>
+              <button onclick="selectQuarter('Q1')">Q1</button>
+              <button onclick="selectQuarter('Q2')">Q2</button>
+              <button onclick="selectQuarter('H1')">H1</button>
+              <button onclick="selectQuarter('Q3')">Q3</button>
+              <button onclick="selectQuarter('Q4')">Q4</button>
             </div>
             <div id="month-dd-checks" class="dd-checks"></div>
           </div>
@@ -1003,7 +1022,8 @@ const STATE = {
   page: 'overview',
   bizTab: '學習商品',
   forecast: {},   // {biz: {收入:%, 成本:%, 費用:%}}
-  importBuffers: {}
+  importBuffers: {},
+  compareBase: 'adj'
 };
 
 // load from localStorage
@@ -1240,6 +1260,12 @@ function renderOverview() {
     options: chartOpts('萬元')
   });
 
+  // Waterfall bridge chart
+  const fcAll = calcForecastAll([]);
+  renderWaterfall('chart-overview-waterfall', sumAllBiz(getBudget(), []), fcAll);
+  document.getElementById('wf-overview-title').textContent =
+    `全公司 利潤橋接（推估 vs ${getBudgetLabel()}目標）`;
+
   // Table: Full PL overview (incl 共通)
   renderOverviewPLTable();
   renderOverviewBizTable();
@@ -1402,6 +1428,14 @@ function renderBizContent(biz) {
     </div>
   </div>
 
+  <div class="section card" style="margin-bottom:14px">
+    <div class="section-hdr">
+      <h3>利潤橋接（推估 vs ${getBudgetLabel()}目標）</h3>
+      <span class="notice">目標利潤 → 收入差 → 成本差 → 費用差 → 推估利潤</span>
+    </div>
+    <div class="chart-wrapper" style="height:200px"><canvas id="chart-biz-waterfall"></canvas></div>
+  </div>
+
   <div class="grid-2" style="margin-bottom:14px">
     <div>
       ${renderBizPLTable(biz, bi, ba, f25, f26, fc)}
@@ -1419,39 +1453,88 @@ function renderBizContent(biz) {
 
   document.getElementById('biz-content').innerHTML = html;
 
+  // Draw waterfall
+  renderWaterfall('chart-biz-waterfall', sumBizYear(getBudget(), biz), calcForecast(biz));
   // Draw monthly chart
   drawBizMonthlyChart(biz);
-  if (biz==='學習商品'||biz==='舞台劇') drawBizKPICharts(biz);
+  if (biz==='學習商品'||biz==='舞台劇') { drawBizKPICharts(biz); drawVolPriceChart(biz); }
 }
 
 function renderBizPLTable(biz, bi, ba, f25, f26, fc) {
-  const rows = METRICS.map(k => {
-    const adjVsInit = bi[k]!==0?(ba[k]-bi[k]):null;
-    const yoy = f25[k]!==0?(f26[k]-f25[k]):null; // vs FY25 累計(1M 기준 비교 미조정)
-    const vsAdj = ba[k]!==0?(f26[k]-ba[k]):null;
-    const vsAdjPct = ba[k]!==0?f26[k]/ba[k]:null;
-    const fcDiff = ba[k]!==0?fc[k]/ba[k]:null;
-    const isTotal = k==='營業利潤';
-    return `<tr class="${isTotal?'total':''}">
-      <td>${METRIC_LABELS[k]}</td><td></td>
+  const budg = STATE.compareBase === 'adj' ? ba : bi;
+  const budgLabel = getBudgetLabel();
+
+  function row(k, label, cls='', indent=false) {
+    const vsB  = budg[k]!==0 ? (f26[k]-budg[k]) : null;
+    const vsBP = budg[k]!==0 ? f26[k]/budg[k] : null;
+    const fcP  = budg[k]!==0 ? fc[k]/budg[k] : null;
+    const isCost = k!=='收入'&&k!=='營業利潤';
+    const prefix = indent ? '<span style="padding-left:16px;color:var(--color-muted)">└ </span>' : '';
+    return `<tr class="${cls}">
+      <td>${prefix}${label}</td><td></td>
       <td>${fmt(bi[k])}</td>
       <td>${fmt(ba[k])}</td>
       <td>${fmt(f25[k])}</td>
       <td class="col-actual">${fmt(f26[k])}</td>
-      <td class="${pctClass(vsAdj, k!=='收入'&&k!=='營業利潤')}">${vsAdj!=null?fmtDiff(vsAdj):'—'}</td>
-      <td class="${pctClass(vsAdjPct&&vsAdjPct-1)}">${vsAdjPct!=null?fmtPct(vsAdjPct-1):'—'}</td>
+      <td class="${pctClass(vsB,isCost)}">${vsB!=null?fmtDiff(vsB):'—'}</td>
+      <td class="${pctClass(vsBP&&vsBP-1)}">${vsBP!=null?fmtPct(vsBP-1):'—'}</td>
       <td class="col-forecast">${fmt(fc[k])}</td>
-      <td class="${pctClass(fcDiff&&fcDiff-1)}">${fcDiff!=null?fmtPct(fcDiff-1):'—'}</td>
+      <td class="${pctClass(fcP&&fcP-1)}">${fcP!=null?fmtPct(fcP-1):'—'}</td>
     </tr>`;
-  }).join('');
+  }
 
-  return `<div style="font-size:12px;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">年度 PL 對比（萬元）</div>
+  function subtotalRow(label, vals, cls='subtotal') {
+    const vsB  = budg['tmp']!==0 ? null : null;
+    return `<tr class="${cls}" style="background:var(--color-main-50,#f8fafc)">
+      <td><strong>${label}</strong></td><td></td>
+      <td>${fmt(vals.bi)}</td>
+      <td>${fmt(vals.ba)}</td>
+      <td>${fmt(vals.f25)}</td>
+      <td class="col-actual">${fmt(vals.f26)}</td>
+      <td></td><td></td>
+      <td class="col-forecast">${fmt(vals.fc)}</td>
+      <td></td>
+    </tr>`;
+  }
+
+  const grossBi=bi.收入-bi.成本, grossBa=ba.收入-ba.成本, grossF25=f25.收入-f25.成本;
+  const grossF26=f26.收入-f26.成本, grossFc=fc.收入-fc.成本;
+  const expBi=bi.營業費用+bi.一般管理費+bi.人件費, expBa=ba.營業費用+ba.一般管理費+ba.人件費;
+  const expF25=f25.營業費用+f25.一般管理費+f25.人件費, expF26=f26.營業費用+f26.一般管理費+f26.人件費;
+  const expFc=fc.營業費用+fc.一般管理費+fc.人件費;
+
+  const expGrp = `
+    <tr class="acc-trigger" onclick="toggleAcc(this)" style="cursor:pointer">
+      <td><span class="acc-arrow">▶</span> 費用合計</td><td></td>
+      <td>${fmt(expBi)}</td>
+      <td>${fmt(expBa)}</td>
+      <td>${fmt(expF25)}</td>
+      <td class="col-actual">${fmt(expF26)}</td>
+      <td class="${pctClass(budg.營業費用&&expF26-expBa,true)}">${fmtDiff(expF26-expBa)}</td>
+      <td class="${pctClass(expBa&&expF26/expBa-1,true)}">${expBa?fmtPct(expF26/expBa-1):'—'}</td>
+      <td class="col-forecast">${fmt(expFc)}</td>
+      <td></td>
+    </tr>
+    ${row('營業費用','營業費用','acc-item',true)}
+    ${row('一般管理費','一般管理費','acc-item',true)}
+    ${row('人件費','人件費','acc-item',true)}`;
+
+  const rows = `
+    ${row('收入','銷貨收入')}
+    ${row('成本','銷貨成本')}
+    ${subtotalRow('毛利', {bi:grossBi,ba:grossBa,f25:grossF25,f26:grossF26,fc:grossFc})}
+    ${expGrp}
+    ${row('營業利潤','營業利潤','total')}`;
+
+  return `<div style="font-size:12px;font-weight:600;color:var(--color-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">
+    年度 PL 對比（萬元）· 對比基準：${budgLabel}
+  </div>
   <div class="tbl-wrap">
   <table>
   <thead><tr>
     <th>科目</th><th></th>
     <th>FY26期初</th><th>FY26期初調整</th><th>FY25實績</th>
-    <th>FY26實績</th><th>vs期初調整差額</th><th>達成%</th>
+    <th>FY26實績</th><th>vs ${budgLabel} 差額</th><th>達成%</th>
     <th>保守推估</th><th>推估達成%</th>
   </tr></thead>
   <tbody>${rows}</tbody>
@@ -1521,6 +1604,12 @@ function renderBizKPISection(biz) {
         <div class="kpi-chart-box"><div class="title">WEB 銷售數</div><canvas id="kc-web"></canvas></div>
         <div class="kpi-chart-box"><div class="title">TEL 銷售數</div><canvas id="kc-tel"></canvas></div>
       </div>
+      <div style="margin-top:14px">
+        <h5 style="color:var(--color-muted);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">
+          量差 vs 價差 分析（vs FY25 同期，實際收入差的成因分解）
+        </h5>
+        <div style="height:200px"><canvas id="kc-vol-price"></canvas></div>
+      </div>
     </div>`;
   } else {
     return `<div class="kpi-section" style="margin-top:14px">
@@ -1529,6 +1618,12 @@ function renderBizKPISection(biz) {
         <div class="kpi-chart-box"><div class="title">月別公演場次</div><canvas id="kc-stage-shows"></canvas></div>
         <div class="kpi-chart-box"><div class="title">月別觀客動員數</div><canvas id="kc-stage-audience"></canvas></div>
         <div class="kpi-chart-box"><div class="title">月別平均票價（NTD）</div><canvas id="kc-stage-price"></canvas></div>
+      </div>
+      <div style="margin-top:14px">
+        <h5 style="color:var(--color-muted);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px">
+          量差 vs 價差 分析（vs FY25 同期，觀客動員數 × 票價）
+        </h5>
+        <div style="height:200px"><canvas id="kc-vp-stage"></canvas></div>
       </div>
     </div>`;
   }
@@ -2554,6 +2649,249 @@ function vendorSort(col) {
     VENDOR_STATE.sortAsc = col === 'v';
   }
   renderVendorTable();
+}
+
+// ═══════════════════════════════════════════════════
+//  COMPARE BASE TOGGLE
+// ═══════════════════════════════════════════════════
+function getBudget() {
+  return STATE.compareBase === 'init' ? DATA.budget_init : DATA.budget_adj;
+}
+function getBudgetLabel() {
+  return STATE.compareBase === 'init' ? '期初' : '期初調整';
+}
+function setCompareBase(base, btn) {
+  STATE.compareBase = base;
+  document.querySelectorAll('.compare-base-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPage(STATE.page);
+}
+
+// ═══════════════════════════════════════════════════
+//  ACCORDION TOGGLE
+// ═══════════════════════════════════════════════════
+function toggleAcc(trigger) {
+  const items = [];
+  let el = trigger.nextElementSibling;
+  while (el && el.classList.contains('acc-item')) {
+    items.push(el); el = el.nextElementSibling;
+  }
+  const isOpen = items[0] && items[0].style.display !== 'none';
+  items.forEach(item => item.style.display = isOpen ? 'none' : '');
+  const arrow = trigger.querySelector('.acc-arrow');
+  if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+}
+
+// ═══════════════════════════════════════════════════
+//  QUARTER SHORTCUTS
+// ═══════════════════════════════════════════════════
+const QUARTERS = {
+  Q1: ['202604','202605','202606'],
+  Q2: ['202607','202608','202609'],
+  H1: ['202604','202605','202606','202607','202608','202609'],
+  Q3: ['202610','202611','202612'],
+  Q4: ['202701','202702','202703'],
+};
+function selectQuarter(q) {
+  const months = QUARTERS[q] || [];
+  MONTH_STATE.selectedMonths = months.filter(m => DATA.months_fy26.map(String).includes(m));
+  if (MONTH_STATE.selectedMonths.length === 0) MONTH_STATE.selectedMonths = [String(DATA.months_fy26[0])];
+  buildMonthDD(); renderMonthly();
+}
+
+// ═══════════════════════════════════════════════════
+//  FORECAST ALL BUSINESS UNITS
+// ═══════════════════════════════════════════════════
+function calcForecastAll(excludeList=[]) {
+  const r = {收入:0,成本:0,營業費用:0,一般管理費:0,人件費:0,營業利潤:0};
+  const allBiz = [...BIZ_LIST, '共通'];
+  for (const biz of allBiz) {
+    if (excludeList.includes(biz)) continue;
+    const fc = calcForecast(biz);
+    for (const k of METRICS) r[k] += fc[k];
+  }
+  r.營業利潤 = r.收入 - r.成本 - r.營業費用 - r.一般管理費 - r.人件費;
+  return r;
+}
+
+// ═══════════════════════════════════════════════════
+//  WATERFALL (BRIDGE) CHART
+// ═══════════════════════════════════════════════════
+const _wfCharts = {};
+
+function renderWaterfall(canvasId, budgetData, forecastData) {
+  const bd = budgetData;
+  const fd = forecastData;
+
+  const tgtProfit = bd.營業利潤;
+  const fstProfit = fd.營業利潤;
+  const revD  = fd.收入 - bd.收入;
+  const costD = bd.成本 - fd.成本;
+  const expBd = bd.營業費用 + bd.一般管理費 + bd.人件費;
+  const expFd = fd.營業費用 + fd.一般管理費 + fd.人件費;
+  const expD  = expBd - expFd;
+
+  const W = 10000;
+  const r0 = tgtProfit, r1 = r0 + revD, r2 = r1 + costD, r3 = r2 + expD;
+
+  const labels = [
+    getBudgetLabel() + '利潤',
+    '收入差異',
+    '成本差異',
+    '費用差異',
+    '推估利潤'
+  ];
+
+  const floatData = [
+    [0, tgtProfit / W],
+    [Math.min(r0, r1) / W, Math.max(r0, r1) / W],
+    [Math.min(r1, r2) / W, Math.max(r1, r2) / W],
+    [Math.min(r2, r3) / W, Math.max(r2, r3) / W],
+    [0, fstProfit / W],
+  ];
+
+  const POS = 'rgba(16,185,129,0.82)', NEG = 'rgba(244,63,94,0.82)', BLU = 'rgba(99,102,241,0.82)';
+  const colors = [
+    BLU,
+    revD  >= 0 ? POS : NEG,
+    costD >= 0 ? POS : NEG,
+    expD  >= 0 ? POS : NEG,
+    fstProfit >= tgtProfit ? POS : NEG,
+  ];
+
+  const diffs = [tgtProfit, revD, costD, expD, fstProfit];
+
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (_wfCharts[canvasId]) { _wfCharts[canvasId].destroy(); }
+
+  _wfCharts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '利潤橋接',
+        data: floatData,
+        backgroundColor: colors,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          formatter: (val, ctx) => {
+            const d = diffs[ctx.dataIndex];
+            const sign = ctx.dataIndex > 0 && ctx.dataIndex < 4 && d >= 0 ? '+' : '';
+            return `${sign}${fmtWan(d)}`;
+          },
+          color: '#fff',
+          font: { size: 11, weight: 'bold' },
+          anchor: 'center', align: 'center',
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = diffs[ctx.dataIndex];
+              const sign = ctx.dataIndex > 0 && ctx.dataIndex < 4 && d >= 0 ? '+' : '';
+              return `${sign}${fmtWan(d)} (${fmtActual(d)})`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: { ticks: { callback: v => fmtWan(v * W) } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  量差 vs 價差 ANALYSIS
+// ═══════════════════════════════════════════════════
+function getVolPriceData(biz) {
+  const actMonths = actualMonths();
+  if (!actMonths.length) return null;
+
+  const result = [];
+
+  for (const m of actMonths) {
+    const m25 = String(parseInt(m) - 100);
+
+    if (biz === '學習商品') {
+      const kpi = DATA.kpi;
+      const qty26 = (kpi['学習商品販売数']?.実績?.[m]) || 0;
+      const qty25 = (kpi['学習商品販売数']?.昨年?.[m]) || 0;
+      const prc26 = (kpi['学習商品販売単価']?.実績?.[m]) || 0;
+      const prc25 = (kpi['学習商品販売単価']?.昨年?.[m]) || 0;
+
+      if (!qty26 || !qty25 || !prc26 || !prc25) continue;
+      const volVar = (qty26 - qty25) * prc25;
+      const prcVar = (prc26 - prc25) * qty26;
+      result.push({ m, volVar, prcVar, total: volVar + prcVar });
+
+    } else if (biz === '舞台劇') {
+      const kpi = DATA.kpi;
+      const qty26 = (kpi['舞台劇観客動員数']?.実績?.[m]) || 0;
+      const qty25 = (kpi['舞台劇観客動員数']?.昨年?.[m]) || 0;
+      const prc26 = (kpi['舞台劇チケット単価']?.実績?.[m]) || 0;
+      const prc25 = (kpi['舞台劇チケット単価']?.昨年?.[m]) || 0;
+
+      if (!qty26 || !qty25 || !prc26 || !prc25) continue;
+      const volVar = (qty26 - qty25) * prc25;
+      const prcVar = (prc26 - prc25) * qty26;
+      result.push({ m, volVar, prcVar, total: volVar + prcVar });
+    }
+  }
+  return result;
+}
+
+function drawVolPriceChart(biz) {
+  const data = getVolPriceData(biz);
+  const canvasId = biz === '學習商品' ? 'kc-vol-price' : 'kc-vp-stage';
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !data || !data.length) return;
+
+  new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d => getMonthLabel(d.m)),
+      datasets: [
+        {
+          label: '量差（銷量貢獻）',
+          data: data.map(d => d.volVar),
+          backgroundColor: 'rgba(59,130,246,0.8)',
+          borderRadius: 4,
+        },
+        {
+          label: '價差（單價貢獻）',
+          data: data.map(d => d.prcVar),
+          backgroundColor: 'rgba(245,158,11,0.8)',
+          borderRadius: 4,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        datalabels: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${fmtActual(ctx.raw)}`
+          }
+        }
+      },
+      scales: {
+        y: { stacked: false, ticks: { callback: v => fmtWan(v) } },
+        x: { stacked: false }
+      }
+    }
+  });
 }
 
 loadState();
