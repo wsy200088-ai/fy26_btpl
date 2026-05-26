@@ -1870,7 +1870,7 @@ function renderKPI() {
 // ═══════════════════════════════════════════════════
 function chartOpts(unit='', horizontal=false) {
   const numTicks = { color:'var(--color-muted)', font:{size:10},
-    callback: v => v!=null ? Math.round(v).toLocaleString('zh-TW')+'萬' : v };
+    callback: v => v!=null ? Math.round(v).toLocaleString('zh-TW')+'萬元' : v };
   const catTicks = { color:'var(--color-muted)', font:{size:10} };
   return {
     indexAxis: horizontal ? 'y' : 'x',
@@ -2026,11 +2026,11 @@ const fmtWan = n => {
   const s = n < 0 ? '-' : '';
   const a = Math.abs(n);
   const w = a / 10000;
-  if (w >= 10000) return s + (w/10000).toFixed(2) + '億';
-  if (w >= 1000)  return s + Math.round(w).toLocaleString('zh-TW') + '萬';
-  if (w >= 100)   return s + w.toFixed(0) + '萬';
-  if (w >= 10)    return s + w.toFixed(1) + '萬';
-  if (w >= 1)     return s + w.toFixed(2) + '萬';
+  if (w >= 10000) return s + (w/10000).toFixed(2) + '億元';
+  if (w >= 1000)  return s + Math.round(w).toLocaleString('zh-TW') + '萬元';
+  if (w >= 100)   return s + w.toFixed(0) + '萬元';
+  if (w >= 10)    return s + w.toFixed(1) + '萬元';
+  if (w >= 1)     return s + w.toFixed(2) + '萬元';
   return s + a.toFixed(0);
 };
 // 實際金額（Tooltip用）
@@ -2412,7 +2412,7 @@ function renderMonthlyMulti(months) {
       },
       scales:{
         x:{ticks:{color:'var(--color-muted)',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}},
-        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>(+((v||0).toFixed(0))).toLocaleString('zh-TW')+'萬',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}}
+        y:{ticks:{color:'var(--color-muted)',font:{size:10},callback:v=>(+((v||0).toFixed(0))).toLocaleString('zh-TW')+'萬元',font:{size:10}},grid:{color:'rgba(12,74,110,.06)'}}
       }
     }
   });
@@ -2580,7 +2580,7 @@ function renderVendor() {
         datalabels: {display:false}
       },
       scales: {
-        x: { ticks: { callback: v => v>=1e6 ? (v/1e4).toFixed(0)+'萬' : v.toLocaleString() } }
+        x: { ticks: { callback: v => v>=1e6 ? (v/1e4).toFixed(0)+'萬元' : v.toLocaleString() } }
       }
     }
   });
