@@ -1484,7 +1484,6 @@ function renderBizPLTable(biz, bi, ba, f25, f26, fc) {
   }
 
   function subtotalRow(label, vals, cls='subtotal') {
-    const vsB  = budg['tmp']!==0 ? null : null;
     return `<tr class="${cls}" style="background:var(--color-main-50,#f8fafc)">
       <td><strong>${label}</strong></td><td></td>
       <td>${fmt(vals.bi)}</td>
@@ -2676,8 +2675,8 @@ function toggleAcc(trigger) {
   while (el && el.classList.contains('acc-item')) {
     items.push(el); el = el.nextElementSibling;
   }
-  const isOpen = items[0] && items[0].style.display !== 'none';
-  items.forEach(item => item.style.display = isOpen ? 'none' : '');
+  const isOpen = items[0] && items[0].style.display === 'table-row';
+  items.forEach(item => item.style.display = isOpen ? 'none' : 'table-row');
   const arrow = trigger.querySelector('.acc-arrow');
   if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
 }
