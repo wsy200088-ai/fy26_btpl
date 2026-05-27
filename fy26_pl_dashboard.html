@@ -379,6 +379,141 @@ html, body {
 }
 .hdr-btn.primary:hover { filter: brightness(.92); }
 
+/* LANGUAGE / CURRENCY TOGGLES */
+.lang-curr-group { display:flex;gap:3px;align-items:center; }
+.toggle-pill {
+  padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--color-border);
+  background:var(--color-card);color:var(--color-muted);
+  transition:.15s;white-space:nowrap;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.toggle-pill.active { background:var(--color-chart);color:#fff;border-color:var(--color-chart); }
+.toggle-pill:hover:not(.active) { background:var(--color-main-100); }
+.hdr-sep { width:1px;height:20px;background:var(--color-border);margin:0 2px; }
+
+/* TRAFFIC LIGHT CIRCLES */
+.tl-circle {
+  width:20px;height:20px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;
+}
+.tl-circle.tl-green  { background:#dcfce7;color:#16a34a;border:2px solid #22c55e; }
+.tl-circle.tl-yellow { background:#fef3c7;color:#d97706;border:2px solid #f59e0b; }
+.tl-circle.tl-red    { background:#fee2e2;color:#dc2626;border:2px solid #ef4444; }
+
+/* ── PAGE 0: SUMMARY ─────────────────────────── */
+.summary-wrap {
+  max-width:960px;margin:0 auto;padding:24px 24px 48px;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.summary-hdr {
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:14px;padding-bottom:12px;
+  border-bottom:2px solid var(--color-chart);
+}
+.summary-hdr-left h2 { font-size:20px;font-weight:700;color:var(--color-text);margin:0 0 4px; }
+.summary-hdr-left p  { font-size:11px;color:var(--color-muted);margin:0 0 6px; }
+.tl-legend-bar {
+  display:inline-flex;gap:12px;align-items:center;
+  font-size:11px;color:var(--color-muted);
+  background:var(--color-main-50);border:1px solid var(--color-border);
+  padding:5px 14px;border-radius:20px;
+}
+.summary-hdr-right {
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px;
+}
+.sum-date { font-size:11px;color:var(--color-muted); }
+
+/* Business grid */
+.biz-grid {
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  margin-bottom:20px;
+}
+.biz-card {
+  background:var(--color-card);border:1px solid var(--color-border);
+  border-radius:12px;padding:14px 16px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.biz-card-hdr {
+  display:flex;justify-content:space-between;align-items:center;
+}
+.biz-card-name {
+  font-size:13px;font-weight:700;color:var(--color-text);
+}
+.biz-card-tls {
+  display:flex;gap:6px;align-items:center;
+}
+.tl-block {
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.tl-block-lbl { font-size:9px;color:var(--color-muted);white-space:nowrap; }
+.tl-pct { font-size:9px;color:var(--color-muted); }
+
+.biz-metrics {
+  display:grid;grid-template-columns:1fr 1fr;gap:3px 10px;
+}
+.biz-metric-row {
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:11px;
+}
+.biz-metric-lbl { color:var(--color-muted); }
+.biz-metric-val { font-weight:600;color:var(--color-text); }
+.biz-metric-val.pos { color:#16a34a; }
+.biz-metric-val.neg { color:#dc2626; }
+
+.biz-issue-wrap { }
+.biz-issue-lbl { font-size:10px;color:var(--color-muted);margin-bottom:3px; }
+.biz-issue {
+  background:var(--color-main-50);border-radius:6px;
+  padding:6px 8px;font-size:11px;color:var(--color-text);
+  border-left:3px solid var(--color-warning);
+  min-height:28px;cursor:pointer;
+  outline:none;
+}
+.biz-issue:empty::before { content:attr(data-ph);color:var(--color-muted);pointer-events:none; }
+.biz-issue:focus { outline:1px solid var(--color-chart); }
+
+/* Overall table */
+.sum-overall {
+  background:var(--color-card);border:1px solid var(--color-border);
+  border-radius:12px;padding:16px;
+}
+.sum-overall h3 {
+  font-size:14px;font-weight:700;color:var(--color-text);margin:0 0 12px;
+}
+.sum-tbl {
+  width:100%;border-collapse:collapse;font-size:12px;
+}
+.sum-tbl th {
+  background:var(--color-main-50);color:var(--color-muted);font-weight:600;
+  padding:6px 10px;text-align:right;border-bottom:1px solid var(--color-border);
+}
+.sum-tbl th:first-child { text-align:left; }
+.sum-tbl td {
+  padding:6px 10px;border-bottom:1px solid var(--color-border);text-align:right;
+}
+.sum-tbl td:first-child { text-align:left;font-weight:600; }
+.sum-tbl tr:last-child td { border-bottom:none; }
+.sum-tbl .sum-total td { background:var(--color-main-50);font-weight:700; }
+.sum-tbl .pos { color:#16a34a; }
+.sum-tbl .neg { color:#dc2626; }
+
+/* A4 Print */
+@media print {
+  body * { visibility:hidden !important; }
+  #page-summary, #page-summary * { visibility:visible !important; }
+  #page-summary {
+    position:fixed;top:0;left:0;
+    width:210mm;min-height:270mm;
+    background:white;display:block !important;
+  }
+  #app-header, .summary-print-btn { display:none !important; }
+  .summary-wrap { padding:10mm 12mm; }
+  .biz-grid { gap:8px; }
+  .biz-issue:focus { outline:none; }
+}
+
 /* PAGES */
 .page { display: none; }
 .page.active { display: block; }
@@ -646,23 +781,69 @@ html, body {
 <div id="app-header">
   <h1>FY26 <span>PL分析</span></h1>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('overview')">全公司總覽</button>
-    <button class="nav-tab" onclick="showPage('business')">事業別分析</button>
-    <button class="nav-tab" onclick="showPage('common')">共通費用</button>
-    <button class="nav-tab" onclick="showPage('kpi')">KPI 總覽</button>
-    <button class="nav-tab" onclick="showPage('monthly')">月別分析</button>
-    <button class="nav-tab" onclick="showPage('vendor')">廠商分析</button>
+    <button class="nav-tab" onclick="showPage('summary')" id="tab-summary">經營摘要</button>
+    <button class="nav-tab active" onclick="showPage('overview')" id="tab-overview">全公司總覽</button>
+    <button class="nav-tab" onclick="showPage('business')" id="tab-business">事業別分析</button>
+    <button class="nav-tab" onclick="showPage('common')" id="tab-common">共通費用</button>
+    <button class="nav-tab" onclick="showPage('kpi')" id="tab-kpi">KPI 總覽</button>
+    <button class="nav-tab" onclick="showPage('monthly')" id="tab-monthly">月別分析</button>
+    <button class="nav-tab" onclick="showPage('vendor')" id="tab-vendor">廠商分析</button>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <span style="font-size:12px;color:var(--color-muted)">對比基準：</span>
-    <button class="metric-pill compare-base-pill active" onclick="setCompareBase('adj',this)" style="font-size:12px;padding:4px 10px">期初調整</button>
-    <button class="metric-pill compare-base-pill" onclick="setCompareBase('init',this)" style="font-size:12px;padding:4px 10px">期初</button>
+  <div style="display:flex;gap:6px;align-items:center">
+    <div class="lang-curr-group">
+      <button class="toggle-pill active" id="lang-zh" onclick="setLang('zh',this)">中文</button>
+      <button class="toggle-pill" id="lang-ja" onclick="setLang('ja',this)">日本語</button>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="lang-curr-group">
+      <button class="toggle-pill active" id="curr-ntd" onclick="setCurrency('NTD',this)">NTD</button>
+      <button class="toggle-pill" id="curr-jpy" onclick="setCurrency('JPY',this)">JPY</button>
+    </div>
+    <div class="hdr-sep"></div>
+    <span style="font-size:12px;color:var(--color-muted)" id="hdr-cmp-lbl">對比基準：</span>
+    <button class="metric-pill compare-base-pill active" id="cmp-adj" onclick="setCompareBase('adj',this)" style="font-size:12px;padding:4px 10px">期初調整</button>
+    <button class="metric-pill compare-base-pill" id="cmp-init" onclick="setCompareBase('init',this)" style="font-size:12px;padding:4px 10px">期初</button>
     <button class="hdr-btn secondary" onclick="openImport()">⬆ 匯入 Excel</button>
     <button class="hdr-btn primary" onclick="exportHTML()">⬇ 匯出 HTML</button>
   </div>
 </div>
 
 <div class="ds-root">
+
+<!-- ═══ PAGE 0: 經營摘要 ═══ -->
+<div id="page-summary" class="page">
+<div class="summary-wrap">
+
+  <div class="summary-hdr">
+    <div class="summary-hdr-left">
+      <h2 id="sum-title">經營摘要</h2>
+      <p id="sum-subtitle">FY26 Benesse Taipei Branch PL — 經營摘要</p>
+      <div class="tl-legend-bar" id="sum-tl-legend">
+        <span>🟢&nbsp;≥95%</span>
+        <span>🟡&nbsp;85–95%</span>
+        <span>🔴&nbsp;&lt;85%</span>
+        <span style="color:var(--color-border)">│</span>
+        <span id="sum-tl-left-lbl">左：當月</span>
+        <span id="sum-tl-right-lbl">右：全年推估</span>
+      </div>
+    </div>
+    <div class="summary-hdr-right">
+      <div class="sum-date" id="sum-date"></div>
+      <button class="hdr-btn primary summary-print-btn" onclick="window.print()" id="sum-print-btn">🖨 列印摘要</button>
+    </div>
+  </div>
+
+  <!-- Business Grid 3×3 -->
+  <div class="biz-grid" id="sum-biz-grid"><!-- renderSummary() --></div>
+
+  <!-- Overall PL Table -->
+  <div class="sum-overall">
+    <h3 id="sum-overall-title">全公司 PL 總覽（含共通）</h3>
+    <div id="sum-overall-tbl"><!-- renderSummaryOverall() --></div>
+  </div>
+
+</div>
+</div><!-- /page-summary -->
 
 <!-- ═══ PAGE 1: 全公司總覽 ═══ -->
 <div id="page-overview" class="page active">
@@ -1024,16 +1205,153 @@ function destroyChart(id) {
 const STATE = {
   page: 'overview',
   bizTab: '學習商品',
-  forecast: {},   // {biz: {收入:%, 成本:%, 費用:%}}
+  forecast: {},        // {biz: {收入:%, 成本:%, 費用:%}}
   importBuffers: {},
-  compareBase: 'adj'
+  compareBase: 'adj',
+  lang: 'zh',          // 'zh' | 'ja'
+  currency: 'NTD',     // 'NTD' | 'JPY'
+  issueNotes: {}       // {biz: 'note text'}
 };
+
+// ═══════════════════════════════════════════════════
+//  EXCHANGE RATE  (populated from Excel "匯率" sheet)
+// ═══════════════════════════════════════════════════
+let EXCHANGE_RATE = {}; // { '202604': 4.52, ... }
+
+// ═══════════════════════════════════════════════════
+//  I18N
+// ═══════════════════════════════════════════════════
+const I18N = {
+  zh: {
+    // Nav tabs
+    'nav.summary':'經營摘要','nav.overview':'全公司總覽','nav.business':'事業別分析',
+    'nav.common':'共通費用','nav.kpi':'KPI 總覽','nav.monthly':'月別分析','nav.vendor':'廠商分析',
+    // Compare base
+    'cmp.label':'對比基準：','cmp.adj':'期初調整','cmp.init':'期初',
+    // Metrics
+    '收入':'銷貨收入','成本':'銷貨成本','毛利':'毛利',
+    '營業費用':'營業費用','一般管理費':'一般管理費','人件費':'人件費','營業利潤':'營業利潤',
+    // Business names
+    '學習商品':'學習商品','舞台劇':'舞台劇','授權金':'授權金','周邊商品':'周邊商品',
+    '巧連智數位經典':'巧連智數位經典','Mirafeel':'Mirafeel','其他':'其他',
+    '日本跨境進口A':'日本跨境進口A','共通':'共通',
+    // Budget/forecast labels
+    '期初目標':'期初目標','期初調整':'期初調整',
+    'FY25實績':'FY25實績','FY26實績':'FY26實績','推估':'推估',
+    // Summary page
+    'sum.title':'經營摘要',
+    'sum.subtitle':'FY26 Benesse Taipei Branch PL — 經營摘要',
+    'sum.tl.left':'左：當月','sum.tl.right':'右：全年推估',
+    'sum.tl.month':'當月','sum.tl.year':'全年',
+    'sum.print':'🖨 列印摘要','sum.issue.ph':'點擊新增課題...',
+    'sum.overall.title':'全公司 PL 總覽（含共通）',
+    'sum.col.biz':'事業','sum.col.bud.rev':'預算收入','sum.col.fc.rev':'推估收入',
+    'sum.col.ach':'達成率','sum.col.bud.op':'預算利潤','sum.col.fc.op':'推估利潤',
+    'sum.total':'合計（含共通）',
+    // Currency unit label
+    'unit':'萬元 NTD',
+  },
+  ja: {
+    // Nav tabs
+    'nav.summary':'経営サマリー','nav.overview':'全社総覧','nav.business':'事業別分析',
+    'nav.common':'共通費用','nav.kpi':'KPI 一覧','nav.monthly':'月別分析','nav.vendor':'ベンダー分析',
+    // Compare base
+    'cmp.label':'比較基準：','cmp.adj':'修正予算','cmp.init':'期初予算',
+    // Metrics
+    '収入':'売上高','成本':'売上原価','毛利':'粗利益',
+    '営業費用':'販管費','一般管理費':'一般管理費','人件費':'人件費','営業利潤':'営業利益',
+    // Mapping traditional Chinese metric keys → Japanese values
+    '收入':'売上高','成本':'売上原価',
+    '營業費用':'販管費','一般管理費':'一般管理費',
+    '人件費':'人件費','營業利潤':'営業利益',
+    // Business names
+    '學習商品':'学習商品','舞台劇':'舞台劇','授權金':'ライセンス','周邊商品':'周辺商品',
+    '巧連智數位經典':'巧連智デジタル','Mirafeel':'ミラフィール','其他':'その他',
+    '日本跨境進口A':'日本越境輸入A','共通':'共通費用',
+    // Budget/forecast labels
+    '期初目標':'期初予算','期初調整':'修正予算',
+    'FY25實績':'FY25実績','FY26實績':'FY26実績','推估':'見込み',
+    // Summary page
+    'sum.title':'経営サマリー',
+    'sum.subtitle':'FY26 Benesse Taipei Branch PL — 経営サマリー',
+    'sum.tl.left':'左：当月','sum.tl.right':'右：通期',
+    'sum.tl.month':'当月','sum.tl.year':'通期',
+    'sum.print':'🖨 印刷','sum.issue.ph':'課題を入力...',
+    'sum.overall.title':'全社 PL 総覧（共通費用含む）',
+    'sum.col.biz':'事業','sum.col.bud.rev':'予算売上','sum.col.fc.rev':'見込み売上',
+    'sum.col.ach':'達成率','sum.col.bud.op':'予算利益','sum.col.fc.op':'見込み利益',
+    'sum.total':'合計（共通含む）',
+    // Currency unit label
+    'unit':'万円 JPY',
+  }
+};
+function t(key) {
+  const dict = I18N[STATE.lang] || I18N.zh;
+  return dict[key] !== undefined ? dict[key] : (I18N.zh[key] !== undefined ? I18N.zh[key] : key);
+}
+
+// ═══════════════════════════════════════════════════
+//  CURRENCY
+// ═══════════════════════════════════════════════════
+function getRate(month) {
+  if (STATE.currency === 'NTD') return 1;
+  if (month && EXCHANGE_RATE[month]) return EXCHANGE_RATE[month];
+  const vals = Object.values(EXCHANGE_RATE);
+  return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 4.5;
+}
+
+function fmtMoney(n, month) {
+  if (n == null) return '—';
+  const rate = getRate(month);
+  const converted = n * rate;
+  const s = converted < 0 ? '-' : '';
+  const a = Math.abs(converted);
+  const w = a / 10000;
+  const unitCJK = STATE.currency === 'JPY' ? '万円' : '萬元';
+  const unitBig = STATE.currency === 'JPY' ? '億円' : '億元';
+  if (w >= 10000) return s + (w/10000).toFixed(2) + unitBig;
+  if (w >= 1000)  return s + Math.round(w).toLocaleString('zh-TW') + unitCJK;
+  if (w >= 100)   return s + w.toFixed(0) + unitCJK;
+  if (w >= 10)    return s + w.toFixed(1) + unitCJK;
+  if (w >= 1)     return s + w.toFixed(2) + unitCJK;
+  return s + a.toFixed(0);
+}
+
+function setLang(lang, btn) {
+  STATE.lang = lang;
+  document.querySelectorAll('#lang-zh,#lang-ja').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Update nav tab labels
+  const navMap = {summary:'nav.summary',overview:'nav.overview',business:'nav.business',
+    common:'nav.common',kpi:'nav.kpi',monthly:'nav.monthly',vendor:'nav.vendor'};
+  for (const [pg, key] of Object.entries(navMap)) {
+    const el = document.getElementById('tab-'+pg);
+    if (el) el.textContent = t(key);
+  }
+  // Update compare base labels
+  const cmpLbl = document.getElementById('hdr-cmp-lbl');
+  if (cmpLbl) cmpLbl.textContent = t('cmp.label');
+  const cmpAdj = document.getElementById('cmp-adj');
+  if (cmpAdj) cmpAdj.textContent = t('cmp.adj');
+  const cmpInit = document.getElementById('cmp-init');
+  if (cmpInit) cmpInit.textContent = t('cmp.init');
+  renderPage(STATE.page);
+}
+
+function setCurrency(curr, btn) {
+  STATE.currency = curr;
+  document.querySelectorAll('#curr-ntd,#curr-jpy').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPage(STATE.page);
+}
 
 // load from localStorage
 function loadState() {
   try {
     const s = localStorage.getItem('fy26_forecast');
     if (s) STATE.forecast = JSON.parse(s);
+    const n = localStorage.getItem('fy26_issues');
+    if (n) STATE.issueNotes = JSON.parse(n);
   } catch(e){}
 }
 function saveState() {
@@ -1174,11 +1492,13 @@ function showPage(pg) {
   renderPage(pg);
 }
 
+
 // ═══════════════════════════════════════════════════
 //  RENDER DISPATCHER
 // ═══════════════════════════════════════════════════
 function renderPage(pg) {
-  if (pg === 'overview') renderOverview();
+  if (pg === 'summary') renderSummary();
+  else if (pg === 'overview') renderOverview();
   else if (pg === 'business') renderBusiness();
   else if (pg === 'common') renderCommon();
   else if (pg === 'kpi') renderKPI();
@@ -1970,6 +2290,18 @@ function applyImport() {
       const newF26 = parseActual('FY26PL實績 ');
       if (Object.keys(newF26).length > 0) DATA.fy26_actual = newF26;
       updated.push('PL資料');
+      // Parse exchange rate sheet "匯率" (columns: 財務年月, 匯率)
+      const wsRate = wb.Sheets['匯率'];
+      if (wsRate) {
+        const rateRows = XLSX.utils.sheet_to_json(wsRate, {defval:null});
+        EXCHANGE_RATE = {};
+        for (const row of rateRows) {
+          const m = row['財務年月'] != null ? String(row['財務年月']).trim() : null;
+          const r = row['匯率'] ?? row['1NTD=JPY'] ?? row['rate'];
+          if (m && r != null) EXCHANGE_RATE[m] = parseFloat(r);
+        }
+        if (Object.keys(EXCHANGE_RATE).length) updated.push('匯率');
+      }
     }
     document.getElementById('import-status').textContent = `✅ 已更新：${updated.join('、')}。正在重新渲染…`;
     closeImport();
@@ -2727,6 +3059,182 @@ function selectQuarter(q) {
 // ═══════════════════════════════════════════════════
 //  FORECAST ALL BUSINESS UNITS
 // ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+//  TRAFFIC LIGHT
+// ═══════════════════════════════════════════════════
+function tlClass(pct) {
+  if (pct == null || isNaN(pct) || !isFinite(pct)) return 'tl-yellow';
+  if (pct >= 0.95) return 'tl-green';
+  if (pct >= 0.85) return 'tl-yellow';
+  return 'tl-red';
+}
+
+function calcTLMonth(biz) {
+  const actual = DATA.fy26_actual[biz] || {};
+  const budSrc = STATE.compareBase === 'adj' ? DATA.budget_adj : DATA.budget_init;
+  const budget = budSrc[biz] || {};
+  let latestMonth = null;
+  for (const m of MONTHS_FY26) {
+    if (actual[m] && actual[m].收入 != null) latestMonth = m;
+  }
+  if (!latestMonth) return null;
+  const act = actual[latestMonth]?.收入 || 0;
+  const bud = budget[latestMonth]?.收入 || 0;
+  return bud ? act / bud : null;
+}
+
+function calcTLYear(biz) {
+  const fc = calcForecast(biz);
+  const budSrc = STATE.compareBase === 'adj' ? DATA.budget_adj : DATA.budget_init;
+  const budYear = sumBizYear(budSrc, biz);
+  return budYear.收入 ? fc.收入 / budYear.收入 : null;
+}
+
+// ═══════════════════════════════════════════════════
+//  PAGE 0: SUMMARY
+// ═══════════════════════════════════════════════════
+function saveIssueNote(biz, text) {
+  STATE.issueNotes[biz] = text.trim();
+  localStorage.setItem('fy26_issues', JSON.stringify(STATE.issueNotes));
+}
+
+function renderSummary() {
+  // Date
+  const today = new Date();
+  const dateEl = document.getElementById('sum-date');
+  if (dateEl) dateEl.textContent =
+    `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+
+  // i18n static labels
+  const sumTitle = document.getElementById('sum-title');
+  if (sumTitle) sumTitle.textContent = t('sum.title');
+  const sumSub = document.getElementById('sum-subtitle');
+  if (sumSub) sumSub.textContent = t('sum.subtitle');
+  const tlLeft = document.getElementById('sum-tl-left-lbl');
+  if (tlLeft) tlLeft.textContent = t('sum.tl.left');
+  const tlRight = document.getElementById('sum-tl-right-lbl');
+  if (tlRight) tlRight.textContent = t('sum.tl.right');
+  const printBtn = document.getElementById('sum-print-btn');
+  if (printBtn) printBtn.textContent = t('sum.print');
+  const ovTitle = document.getElementById('sum-overall-title');
+  if (ovTitle) ovTitle.textContent = t('sum.overall.title');
+
+  const grid = document.getElementById('sum-biz-grid');
+  if (!grid) return;
+
+  const budSrc = STATE.compareBase === 'adj' ? DATA.budget_adj : DATA.budget_init;
+
+  grid.innerHTML = BIZ_LIST.map(biz => {
+    const tlM    = calcTLMonth(biz);
+    const tlY    = calcTLYear(biz);
+    const clsM   = tlClass(tlM);
+    const clsY   = tlClass(tlY);
+    const pctM   = tlM != null ? (tlM * 100).toFixed(1) + '%' : '—';
+    const pctY   = tlY != null ? (tlY * 100).toFixed(1) + '%' : '—';
+
+    const fc     = calcForecast(biz);
+    const budY   = sumBizYear(budSrc, biz);
+    const revAch = budY.收入  ? (fc.收入  / budY.收入  - 1) * 100 : null;
+    const opAch  = budY.營業利潤 ? (fc.營業利潤 / budY.營業利潤 - 1) * 100 : null;
+    const note   = STATE.issueNotes[biz] || '';
+    const bizLoc = t(biz);
+
+    return `
+<div class="biz-card">
+  <div class="biz-card-hdr">
+    <span class="biz-card-name">${bizLoc}</span>
+    <div class="biz-card-tls">
+      <div class="tl-block">
+        <div class="tl-block-lbl">${t('sum.tl.month')}</div>
+        <div class="tl-circle ${clsM}" title="${pctM}"></div>
+        <div class="tl-pct">${pctM}</div>
+      </div>
+      <div class="tl-block">
+        <div class="tl-block-lbl">${t('sum.tl.year')}</div>
+        <div class="tl-circle ${clsY}" title="${pctY}"></div>
+        <div class="tl-pct">${pctY}</div>
+      </div>
+    </div>
+  </div>
+  <div class="biz-metrics">
+    <div class="biz-metric-row">
+      <span class="biz-metric-lbl">${t('收入')}</span>
+      <span class="biz-metric-val">${fmtMoney(fc.收入)}</span>
+    </div>
+    <div class="biz-metric-row">
+      <span class="biz-metric-lbl">vs ${t('期初調整')}</span>
+      <span class="biz-metric-val ${revAch==null?'':revAch>=0?'pos':'neg'}">${revAch!=null?(revAch>=0?'+':'')+revAch.toFixed(1)+'%':'—'}</span>
+    </div>
+    <div class="biz-metric-row">
+      <span class="biz-metric-lbl">${t('營業利潤')}</span>
+      <span class="biz-metric-val ${fc.營業利潤>=0?'pos':'neg'}">${fmtMoney(fc.營業利潤)}</span>
+    </div>
+    <div class="biz-metric-row">
+      <span class="biz-metric-lbl">vs ${t('期初調整')}</span>
+      <span class="biz-metric-val ${opAch==null?'':opAch>=0?'pos':'neg'}">${opAch!=null?(opAch>=0?'+':'')+opAch.toFixed(1)+'%':'—'}</span>
+    </div>
+  </div>
+  <div class="biz-issue-wrap">
+    <div class="biz-issue-lbl">${t('sum.issue.ph').replace('...','')}</div>
+    <div class="biz-issue" contenteditable="true"
+         onblur="saveIssueNote('${biz}',this.textContent)"
+         data-ph="${t('sum.issue.ph')}">${note}</div>
+  </div>
+</div>`;
+  }).join('');
+
+  renderSummaryOverall();
+}
+
+function renderSummaryOverall() {
+  const el = document.getElementById('sum-overall-tbl');
+  if (!el) return;
+  const budSrc = STATE.compareBase === 'adj' ? DATA.budget_adj : DATA.budget_init;
+
+  const rows = [...BIZ_LIST, '共通'].map(biz => {
+    const fc   = calcForecast(biz);
+    const budY = sumBizYear(budSrc, biz);
+    const ach  = budY.收入 ? fc.收入 / budY.收入 : null;
+    const achCls = ach != null ? (ach >= 1 ? 'pos' : (ach >= 0.85 ? '' : 'neg')) : '';
+    const opCls  = fc.營業利潤 >= 0 ? 'pos' : 'neg';
+    return `<tr>
+      <td>${t(biz)}</td>
+      <td>${fmtMoney(budY.收入)}</td>
+      <td>${fmtMoney(fc.收入)}</td>
+      <td class="${achCls}">${ach != null ? (ach*100).toFixed(1)+'%' : '—'}</td>
+      <td>${fmtMoney(budY.營業利潤)}</td>
+      <td class="${opCls}">${fmtMoney(fc.營業利潤)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalFc  = calcForecastAll([]);
+  const totalBud = sumAllBiz(budSrc, []);
+  const totalAch = totalBud.收入 ? totalFc.收入 / totalBud.收入 : null;
+
+  el.innerHTML = `
+<table class="sum-tbl">
+  <thead><tr>
+    <th>${t('sum.col.biz')}</th>
+    <th>${t('sum.col.bud.rev')}</th>
+    <th>${t('sum.col.fc.rev')}</th>
+    <th>${t('sum.col.ach')}</th>
+    <th>${t('sum.col.bud.op')}</th>
+    <th>${t('sum.col.fc.op')}</th>
+  </tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="sum-total">
+      <td>${t('sum.total')}</td>
+      <td>${fmtMoney(totalBud.收入)}</td>
+      <td>${fmtMoney(totalFc.收入)}</td>
+      <td class="${totalAch!=null?(totalAch>=1?'pos':totalAch>=0.85?'':'neg'):''}">${totalAch!=null?(totalAch*100).toFixed(1)+'%':'—'}</td>
+      <td>${fmtMoney(totalBud.營業利潤)}</td>
+      <td class="${totalFc.營業利潤>=0?'pos':'neg'}">${fmtMoney(totalFc.營業利潤)}</td>
+    </tr>
+  </tbody>
+</table>`;
+}
+
 function calcForecastAll(excludeList=[]) {
   const r = {收入:0,成本:0,營業費用:0,一般管理費:0,人件費:0,營業利潤:0};
   const allBiz = [...BIZ_LIST, '共通'];
