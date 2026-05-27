@@ -420,6 +420,19 @@ html, body {
 .sum-kpi-unit { font-size:10px;color:var(--color-muted); }
 .sum-kpi-edit-hint { font-size:10px;color:var(--color-chart); }
 
+/* KPI view tab switcher */
+.sum-kpi-view-tabs { display:flex;gap:6px;margin-bottom:10px; }
+.sum-kpi-view-tab {
+  padding:5px 16px;border-radius:20px;border:1px solid var(--color-border);
+  background:transparent;font-size:12px;font-weight:500;color:var(--color-muted);
+  cursor:pointer;transition:all .15s;
+}
+.sum-kpi-view-tab.active { background:var(--color-chart);color:#fff;border-color:var(--color-chart); }
+.sum-kpi-view-tab:hover:not(.active) { background:var(--color-bg); }
+.sum-kpi-period-badge {
+  font-size:10px;color:var(--color-muted);margin-bottom:4px;min-height:14px;
+}
+
 /* Summary chart cards */
 .sum-chart-card {
   background:var(--color-card);border:1px solid var(--color-border);
@@ -863,6 +876,14 @@ html, body {
     </div>
   </div>
 
+  <!-- KPI view tab switcher -->
+  <div class="sum-kpi-view-tabs">
+    <button class="sum-kpi-view-tab" id="tab-kpi-month"    onclick="setSummaryKPIView('month')">當月</button>
+    <button class="sum-kpi-view-tab" id="tab-kpi-ytd"      onclick="setSummaryKPIView('ytd')">累計至當月</button>
+    <button class="sum-kpi-view-tab active" id="tab-kpi-forecast" onclick="setSummaryKPIView('forecast')">全年推估</button>
+  </div>
+  <!-- Period label -->
+  <div class="sum-kpi-period-badge" id="sum-kpi-period"></div>
   <!-- KPI Tiles (5 tiles) -->
   <div id="sum-kpi-row" class="sum-kpi-row"><!-- renderSummaryKPI() --></div>
 
@@ -1284,6 +1305,7 @@ const STATE = {
   compareBase: 'adj',
   lang: 'zh',          // 'zh' | 'ja'
   currency: 'NTD',     // 'NTD' | 'JPY'
+  kpiView: 'forecast', // 'month' | 'ytd' | 'forecast'
   // issueNotes → DATA.issue_notes (persisted via exportHTML)
 };
 
@@ -3236,19 +3258,73 @@ function renderSummary() {
   renderSummaryPL();
 }
 
+function calcSummaryKPIData(view) {
+  if (view === 'forecast') {
+    const fcAll = calcForecastAll([]);
+    const fcCom = calcForecast('共通');
+    const bizProfit = BIZ_LIST.reduce((s, b) => s + calcForecast(b).營業利潤, 0);
+    return { rev: fcAll.收入, bizProfit, commonOp: fcCom.營業利潤,
+             opProfit: fcAll.營業利潤, periodLabel: '全年推估' };
+  }
+  // Collect months with actual data
+  const monthsSet = new Set();
+  for (const biz of [...BIZ_LIST, '共通'])
+    for (const m of Object.keys(DATA.actual[biz] || {})) monthsSet.add(m);
+  const months = [...monthsSet].sort();
+  const latest = months[months.length - 1];
+
+  if (view === 'month') {
+    if (!latest) return { rev:0, bizProfit:0, commonOp:0, opProfit:0, periodLabel:'當月（尚無實績）' };
+    let rev=0, bizProfit=0;
+    for (const biz of BIZ_LIST) {
+      const d = ((DATA.actual[biz]||{})[latest])||{};
+      rev += d.收入||0; bizProfit += d.營業利潤||0;
+    }
+    const commonOp = ((DATA.actual['共通']||{})[latest]||{}).營業利潤||0;
+    return { rev, bizProfit, commonOp, opProfit: bizProfit+commonOp,
+             periodLabel: `當月 ${latest.slice(0,4)}/${latest.slice(4)} 實績` };
+  }
+
+  // ytd
+  let rev=0, bizProfit=0, commonOp=0;
+  for (const m of months) {
+    for (const biz of BIZ_LIST) {
+      const d = ((DATA.actual[biz]||{})[m])||{};
+      rev += d.收入||0; bizProfit += d.營業利潤||0;
+    }
+    commonOp += ((DATA.actual['共通']||{})[m]||{}).營業利潤||0;
+  }
+  const ytdLabel = latest
+    ? `累計至 ${latest.slice(0,4)}/${latest.slice(4)}（${months.length}個月）`
+    : '累計（尚無實績）';
+  return { rev, bizProfit, commonOp, opProfit: bizProfit+commonOp, periodLabel: ytdLabel };
+}
+
+function setSummaryKPIView(view) {
+  STATE.kpiView = view;
+  ['month','ytd','forecast'].forEach(v => {
+    const el = document.getElementById('tab-kpi-'+v);
+    if (el) el.classList.toggle('active', v === view);
+  });
+  renderSummaryKPI();
+}
+
 function renderSummaryKPI() {
   const row = document.getElementById('sum-kpi-row');
   if (!row) return;
-  const fcAll = calcForecastAll([]);
-  const fcCom = calcForecast('共通');
-  const bizProfit = BIZ_LIST.reduce((s, b) => s + calcForecast(b).營業利潤, 0);
+
+  const d = calcSummaryKPIData(STATE.kpiView || 'forecast');
   const adj = DATA.adj_ebitda_jpy;
 
+  // Update period badge
+  const badge = document.getElementById('sum-kpi-period');
+  if (badge) badge.textContent = d.periodLabel;
+
   const tiles = [
-    { label: t('sum.kpi.rev'),   v: fcAll.收入,      sign: false },
-    { label: t('sum.kpi.bizop'), v: bizProfit,         sign: true  },
-    { label: t('sum.kpi.common'),v: fcCom.營業利潤,   sign: true, costMode: true },
-    { label: t('sum.kpi.op'),    v: fcAll.營業利潤,   sign: true  },
+    { label: t('sum.kpi.rev'),    v: d.rev,       sign: false },
+    { label: t('sum.kpi.bizop'),  v: d.bizProfit, sign: true  },
+    { label: t('sum.kpi.common'), v: d.commonOp,  sign: true, costMode: true },
+    { label: t('sum.kpi.op'),     v: d.opProfit,  sign: true  },
   ];
   const adjCls = adj==null?'':adj>=0?'pos':'neg';
   const adjTxt = adj!=null?(adj>=0?'+':'')+adj.toFixed(1)+'M':'—';
