@@ -3308,6 +3308,28 @@ function setSummaryKPIView(view) {
     if (el) el.classList.toggle('active', v === view);
   });
   renderSummaryKPI();
+  drawSummaryBridge(view);
+  drawSummaryDonut(view);
+  drawSummaryMargin(view);
+}
+
+// Returns per-biz metrics for the selected view (forecast / month / ytd)
+function getBizDataForView(biz, view) {
+  if (view === 'forecast') return calcForecast(biz);
+  const bizActual = DATA.fy26_actual[biz] || {};
+  const months = Object.keys(bizActual).sort();
+  const empty = {收入:0,成本:0,營業費用:0,一般管理費:0,人件費:0,營業利潤:0};
+  if (view === 'month') {
+    const latest = months[months.length - 1];
+    return latest ? Object.assign({}, empty, bizActual[latest]) : empty;
+  }
+  // ytd — sum all actual months
+  const r = Object.assign({}, empty);
+  for (const m of months) {
+    const d = bizActual[m] || {};
+    for (const k of Object.keys(r)) r[k] += d[k] || 0;
+  }
+  return r;
 }
 
 function renderSummaryKPI() {
@@ -3352,13 +3374,14 @@ function renderSummaryKPI() {
 </div>`;
 }
 
-function drawSummaryBridge() {
+function drawSummaryBridge(view) {
+  view = view || STATE.kpiView || 'forecast';
   const M = 10000;
   const entries = [];
   let running = 0;
 
   for (const biz of BIZ_LIST) {
-    const v = calcForecast(biz).營業利潤 / M;
+    const v = getBizDataForView(biz, view).營業利潤 / M;
     entries.push({ label: t(biz), s: running, e: running + v,
       bg: v>=0?'rgba(59,130,246,0.75)':'rgba(239,68,68,0.75)' });
     running += v;
@@ -3366,7 +3389,7 @@ function drawSummaryBridge() {
   entries.push({ label: t('sum.bridge.bizTotal'), s: 0, e: running,
     bg: 'rgba(100,116,139,0.85)' });
 
-  const com = calcForecast('共通');
+  const com = getBizDataForView('共通', view);
   [['人件費',com.人件費],['一般管理費',com.一般管理費],['成本',com.成本],['營業費用',com.營業費用]]
     .filter(([,v])=>v!==0).forEach(([key,val])=>{
       const v=val/M;
@@ -3375,7 +3398,7 @@ function drawSummaryBridge() {
       running+=v;
     });
 
-  const final = calcForecastAll([]).營業利潤 / M;
+  const final = running; // running already includes common costs
   entries.push({label:t('sum.bridge.opProfit'),s:Math.min(0,final),e:Math.max(0,final),
     bg:final>=0?'rgba(22,163,74,0.85)':'rgba(239,68,68,0.85)'});
 
@@ -3400,11 +3423,12 @@ function drawSummaryBridge() {
   });
 }
 
-function drawSummaryDonut() {
+function drawSummaryDonut(view) {
+  view = view || STATE.kpiView || 'forecast';
   const C=['#93c5fd','#fca5a5','#c4b5fd','#86efac','#fcd34d','#f9a8d4','#a5b4fc','#6ee7b7'];
   destroyChart('sum-donut');
   const ctx=document.getElementById('sum-donut-chart');if(!ctx)return;
-  const revs=BIZ_LIST.map(b=>Math.max(0,calcForecast(b).收入));
+  const revs=BIZ_LIST.map(b=>Math.max(0,getBizDataForView(b,view).收入));
   const total=revs.reduce((s,v)=>s+v,0);
   CHARTS['sum-donut']=new Chart(ctx,{
     type:'doughnut',
@@ -3418,10 +3442,11 @@ function drawSummaryDonut() {
   });
 }
 
-function drawSummaryMargin() {
+function drawSummaryMargin(view) {
+  view = view || STATE.kpiView || 'forecast';
   destroyChart('sum-margin');
   const ctx=document.getElementById('sum-margin-chart');if(!ctx)return;
-  const mg=BIZ_LIST.map(b=>{const fc=calcForecast(b);return fc.收入?+(fc.營業利潤/fc.收入*100).toFixed(1):0;});
+  const mg=BIZ_LIST.map(b=>{const d=getBizDataForView(b,view);return d.收入?+(d.營業利潤/d.收入*100).toFixed(1):0;});
   CHARTS['sum-margin']=new Chart(ctx,{
     type:'bar',
     data:{labels:BIZ_LIST.map(b=>t(b)),
