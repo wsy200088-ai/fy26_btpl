@@ -827,7 +827,6 @@ html, body {
     <button class="nav-tab active" onclick="showPage('overview')" id="tab-overview">全公司總覽</button>
     <button class="nav-tab" onclick="showPage('business')" id="tab-business">事業別分析</button>
     <button class="nav-tab" onclick="showPage('common')" id="tab-common">共通費用</button>
-    <button class="nav-tab" onclick="showPage('kpi')" id="tab-kpi">KPI 總覽</button>
     <button class="nav-tab" onclick="showPage('monthly')" id="tab-monthly">月別分析</button>
     <button class="nav-tab" onclick="showPage('vendor')" id="tab-vendor">廠商分析</button>
   </div>
@@ -1022,35 +1021,6 @@ html, body {
   </div>
 </div></div><!-- /page-common -->
 
-<!-- ═══ PAGE 4: KPI 總覽 ═══ -->
-<div id="page-kpi" class="page">
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <h2 class="dashboard-title">KPI 總覽</h2>
-    <p class="dashboard-subtitle">學習商品・舞台劇 非財務領先指標&nbsp;·&nbsp;実績 / 昨年 / 予算 月別追蹤</p>
-  </div>
-  <div class="section">
-    <div class="section-hdr"><h3 style="color:var(--color-chart)">學習商品 KPI</h3></div>
-    <div class="kpi-charts-grid" id="kpi-learn-charts"></div>
-  </div>
-  <div class="section">
-    <div class="section-hdr"><h3 style="color:#d97706">舞台劇 KPI</h3></div>
-    <div class="kpi-charts-grid" id="kpi-stage-charts"></div>
-  </div>
-  <div class="section">
-    <div class="section-hdr"><h3>FY25 學習商品 管道別實績（收入，萬元）</h3></div>
-    <div class="grid grid-2">
-      <div class="card"><div class="chart-wrapper">
-        <div class="chart-title">管道別 月別銷貨金額（FY25）</div>
-        <canvas id="chart-fy25-channel-amt"></canvas>
-      </div></div>
-      <div class="card"><div class="chart-wrapper">
-        <div class="chart-title">管道別 月別銷售數量（FY25）</div>
-        <canvas id="chart-fy25-channel-qty"></canvas>
-      </div></div>
-    </div>
-  </div>
-</div></div><!-- /page-kpi -->
 
 
 <!-- ═══ PAGE 5: 月別分析 ═══ -->
@@ -1243,11 +1213,7 @@ html, body {
       <div class="name" id="fi-pl-name">（點擊選擇檔案）</div>
       <input type="file" id="fi-pl" accept=".xlsx,.xls" onchange="handleFile(this,'pl')">
     </div>
-    <div class="file-zone" onclick="document.getElementById('fi-kpi').click()">
-      <div>📈 <strong>FY26_KPI.xlsx</strong></div>
-      <div class="name" id="fi-kpi-name">（點擊選擇檔案）</div>
-      <input type="file" id="fi-kpi" accept=".xlsx,.xls" onchange="handleFile(this,'kpi')">
-    </div>
+
     <div id="import-status" style="font-size:12px;color:var(--color-muted);min-height:20px"></div>
     <div class="modal-actions">
       <button class="hdr-btn secondary" onclick="closeImport()">取消</button>
@@ -1620,7 +1586,7 @@ function renderPage(pg) {
   else if (pg === 'overview') renderOverview();
   else if (pg === 'business') renderBusiness();
   else if (pg === 'common') renderCommon();
-  else if (pg === 'kpi') renderKPI();
+
   else if (pg === 'monthly') renderMonthly();
   else if (pg === 'vendor') renderVendor();
 }
@@ -2241,68 +2207,6 @@ function renderCommon() {
   document.getElementById('tbl-common').innerHTML = html;
 }
 
-// ═══════════════════════════════════════════════════
-//  PAGE 4: KPI 總覽
-// ═══════════════════════════════════════════════════
-function renderKPI() {
-  // 學習商品 KPI charts
-  const learnKPIs = [
-    {id:'kpi-learn-qty2',    key:'学習商品販売数',  title:'月別銷售數量（套）',    unit:1},
-    {id:'kpi-learn-rev2',    key:'学習商品売上高',  title:'月別銷售金額（萬元）',   unit:1000},
-    {id:'kpi-learn-price2',  key:'学習商品単価',    title:'月別平均單價（NTD）',   unit:1},
-    {id:'kpi-line2',         key:'LINE新規会員数',  title:'LINE 新規會員數',       unit:1},
-    {id:'kpi-web2',          key:'学習商品WEB販売数',title:'WEB 銷售數',           unit:1},
-    {id:'kpi-tel2',          key:'学習商品TEL販売数',title:'TEL 銷售數',           unit:1},
-  ];
-  const stageKPIs = [
-    {id:'kpi-stage-shows2',   key:'舞台劇公演数',     title:'月別公演場次',         unit:1},
-    {id:'kpi-stage-aud2',     key:'舞台劇観客動員数', title:'月別觀客動員數',        unit:1},
-    {id:'kpi-stage-price2',   key:'舞台劇チケット単価',title:'月別平均票價（NTD）', unit:1},
-  ];
-
-  document.getElementById('kpi-learn-charts').innerHTML =
-    learnKPIs.map(k=>`<div class="kpi-chart-box"><div class="title">${k.title}</div><canvas id="${k.id}"></canvas></div>`).join('');
-  document.getElementById('kpi-stage-charts').innerHTML =
-    stageKPIs.map(k=>`<div class="kpi-chart-box"><div class="title">${k.title}</div><canvas id="${k.id}"></canvas></div>`).join('');
-
-  const kpiOpts = {
-    responsive:true, maintainAspectRatio:true,
-    plugins:{legend:{position:'bottom',labels:{color:'var(--color-muted)',font:{size:10},boxWidth:10}}},
-    scales:{
-      x:{ticks:{color:'var(--color-muted)',font:{size:9}},grid:{color:'rgba(12,74,110,.04)'}},
-      y:{ticks:{color:'var(--color-muted)',font:{size:9},callback:v=>v.toLocaleString()},grid:{color:'rgba(12,74,110,.06)'}}
-    }
-  };
-  const makeKpiDs = (key, unit) => {
-    const k = DATA.kpi[key]; if(!k) return [];
-    const mk=(label,ver,color,dashed=false)=>({
-      label,borderColor:color,data:MONTHS_FY26.map(m=>{const v=(k[ver]||{})[m];return v!=null?v/unit:null;}),
-      pointRadius:3,tension:.3,fill:false,borderDash:dashed?[4,3]:[],spanGaps:false
-    });
-    return [mk('実績','実績',C.actual),mk('昨年','昨年',C.fy25),mk('予算','予算',C.adj,true)];
-  };
-
-  [...learnKPIs,...stageKPIs].forEach(({id,key,unit})=>{
-    destroyChart(id);
-    CHARTS[id]=new Chart(document.getElementById(id),{type:'line',data:{labels:MONTH_LABELS,datasets:makeKpiDs(key,unit)},options:kpiOpts});
-  });
-
-  // FY25 channel charts
-  destroyChart('fy25-ch-amt');
-  destroyChart('fy25-ch-qty');
-  const channels=['TM','官網','電商','團購','其他'];
-  const chColors=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#64748b'];
-  const mkChDs=(src,unit)=>channels.map((ch,i)=>({
-    label:ch, data:MONTHS_FY25.map(m=>(src[ch]||{})[m]/unit||0),
-    borderColor:chColors[i],fill:false,tension:.3,pointRadius:2
-  }));
-  CHARTS['fy25-ch-amt']=new Chart(document.getElementById('chart-fy25-channel-amt'),{
-    type:'line',data:{labels:MONTH_LABELS,datasets:mkChDs(DATA.fy25_learn_amount,10000)},options:chartOpts('萬元')
-  });
-  CHARTS['fy25-ch-qty']=new Chart(document.getElementById('chart-fy25-channel-qty'),{
-    type:'line',data:{labels:MONTH_LABELS,datasets:mkChDs(DATA.fy25_learn_qty,1)},options:chartOpts('套')
-  });
-}
 
 // ═══════════════════════════════════════════════════
 //  CHART OPTIONS HELPER
@@ -2341,7 +2245,6 @@ function closeImport() {
   document.getElementById('import-modal').classList.remove('show');
   STATE.importBuffers = {};
   document.getElementById('fi-pl-name').textContent='（點擊選擇檔案）';
-  document.getElementById('fi-kpi-name').textContent='（點擊選擇檔案）';
   document.getElementById('btn-apply-import').disabled=true;
   document.getElementById('import-status').textContent='';
 }
