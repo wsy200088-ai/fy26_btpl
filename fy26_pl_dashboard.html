@@ -1267,6 +1267,7 @@ DATA.adj_ebitda_jpy = DATA.adj_ebitda_jpy ?? null; // Adj.EBITDA JPY 百万 (手
 DATA.exchange_rate  = DATA.exchange_rate  ?? {};   // {YYYYMM: NTD→JPY rate}
 DATA.issue_notes    = DATA.issue_notes    ?? {};   // {biz: 'issue text'}
 DATA.insight_note   = DATA.insight_note   ?? '';   // 洞察文字
+DATA.fy26_actual    = DATA.fy26_actual    ?? {};   // FY26 實績（從 Excel 匯入）
 
 // Disable datalabels on all charts by default — enable explicitly per chart
 Chart.defaults.plugins.datalabels = { display: false };
@@ -3269,7 +3270,7 @@ function calcSummaryKPIData(view) {
   // Collect months with actual data
   const monthsSet = new Set();
   for (const biz of [...BIZ_LIST, '共通'])
-    for (const m of Object.keys(DATA.actual[biz] || {})) monthsSet.add(m);
+    for (const m of Object.keys(DATA.fy26_actual[biz] || {})) monthsSet.add(m);
   const months = [...monthsSet].sort();
   const latest = months[months.length - 1];
 
@@ -3277,10 +3278,10 @@ function calcSummaryKPIData(view) {
     if (!latest) return { rev:0, bizProfit:0, commonOp:0, opProfit:0, periodLabel:'當月（尚無實績）' };
     let rev=0, bizProfit=0;
     for (const biz of BIZ_LIST) {
-      const d = ((DATA.actual[biz]||{})[latest])||{};
+      const d = ((DATA.fy26_actual[biz]||{})[latest])||{};
       rev += d.收入||0; bizProfit += d.營業利潤||0;
     }
-    const commonOp = ((DATA.actual['共通']||{})[latest]||{}).營業利潤||0;
+    const commonOp = ((DATA.fy26_actual['共通']||{})[latest]||{}).營業利潤||0;
     return { rev, bizProfit, commonOp, opProfit: bizProfit+commonOp,
              periodLabel: `當月 ${latest.slice(0,4)}/${latest.slice(4)} 實績` };
   }
@@ -3289,10 +3290,10 @@ function calcSummaryKPIData(view) {
   let rev=0, bizProfit=0, commonOp=0;
   for (const m of months) {
     for (const biz of BIZ_LIST) {
-      const d = ((DATA.actual[biz]||{})[m])||{};
+      const d = ((DATA.fy26_actual[biz]||{})[m])||{};
       rev += d.收入||0; bizProfit += d.營業利潤||0;
     }
-    commonOp += ((DATA.actual['共通']||{})[m]||{}).營業利潤||0;
+    commonOp += ((DATA.fy26_actual['共通']||{})[m]||{}).營業利潤||0;
   }
   const ytdLabel = latest
     ? `累計至 ${latest.slice(0,4)}/${latest.slice(4)}（${months.length}個月）`
